@@ -41,7 +41,7 @@ export class BookingsService {
     });
 
     if (!booking) {
-      throw new NotFoundException("Booking not found");
+      throw new NotFoundException("预约不存在");
     }
 
     return serializeEntity(booking);
@@ -51,13 +51,13 @@ export class BookingsService {
     const service = await this.prisma.service.findUnique({ where: { id: input.serviceId } });
 
     if (!service || !service.enabled) {
-      throw new BadRequestException("Service is unavailable");
+      throw new BadRequestException("服务项目不可用");
     }
 
     const pet = await this.prisma.pet.findUnique({ where: { id: input.petId } });
 
     if (!pet || pet.userId !== input.userId) {
-      throw new BadRequestException("Pet does not belong to the user");
+      throw new BadRequestException("宠物不属于该用户");
     }
 
     const bookingDate = this.parseDateOnly(input.bookingDate);
@@ -67,7 +67,7 @@ export class BookingsService {
       : new Date(startTime.getTime() + service.durationMinutes * 60_000);
 
     if (endTime <= startTime) {
-      throw new BadRequestException("Booking end time must be after start time");
+      throw new BadRequestException("预约结束时间必须晚于开始时间");
     }
 
     const status = (input.status ?? BookingStatus.PENDING) as BookingStatus;
@@ -130,7 +130,7 @@ export class BookingsService {
     });
 
     if (conflict) {
-      throw new BadRequestException("Booking time slot is already occupied");
+      throw new BadRequestException("该时间段已有预约");
     }
   }
 
@@ -138,13 +138,13 @@ export class BookingsService {
     const count = await this.prisma.booking.count({ where: { id } });
 
     if (count === 0) {
-      throw new NotFoundException("Booking not found");
+      throw new NotFoundException("预约不存在");
     }
   }
 
   private parseDateOnly(date: string) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      throw new BadRequestException("Date must use YYYY-MM-DD format");
+      throw new BadRequestException("日期必须使用 YYYY-MM-DD 格式");
     }
 
     return new Date(`${date}T00:00:00.000Z`);
@@ -155,7 +155,7 @@ export class BookingsService {
     const parsed = new Date(value);
 
     if (Number.isNaN(parsed.getTime())) {
-      throw new BadRequestException("Time is invalid");
+      throw new BadRequestException("时间无效");
     }
 
     return parsed;

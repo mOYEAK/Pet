@@ -28,7 +28,7 @@ export class ServicesService {
     const service = await this.prisma.service.findUnique({ where: { id } });
 
     if (!service) {
-      throw new NotFoundException("Service not found");
+      throw new NotFoundException("服务项目不存在");
     }
 
     return serializeEntity(service);
@@ -69,7 +69,7 @@ export class ServicesService {
     const count = await this.prisma.service.count({ where: { id } });
 
     if (count === 0) {
-      throw new NotFoundException("Service not found");
+      throw new NotFoundException("服务项目不存在");
     }
   }
 }

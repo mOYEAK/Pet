@@ -11,7 +11,7 @@
     <el-table v-loading="loading" :data="services" border>
       <el-table-column prop="name" label="服务名称" min-width="160" />
       <el-table-column prop="category" label="分类" width="130" />
-      <el-table-column label="宠物" width="90">
+      <el-table-column label="宠物类型" width="100">
         <template #default="{ row }">{{ petTypeText[row.petType] ?? row.petType }}</template>
       </el-table-column>
       <el-table-column label="体型" width="90">

@@ -142,7 +142,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    const message = body?.message ?? `Request failed with ${response.status}`;
+    const message = body?.message ?? `请求失败，状态码 ${response.status}`;
     throw new ApiError(Array.isArray(message) ? message.join(", ") : message, response.status);
   }
 

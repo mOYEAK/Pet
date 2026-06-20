@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev:h5": "uni -p h5",
-    "build:h5": "uni build -p h5",
+    "build:h5": "vue-tsc --noEmit && uni build -p h5",
     "dev:mp-weixin": "uni -p mp-weixin",
     "build:mp-weixin": "uni build -p mp-weixin",
-    "build": "uni build -p h5",
+    "build": "vue-tsc --noEmit && uni build -p h5",
     "lint": "vue-tsc --noEmit",
     "typecheck": "vue-tsc --noEmit"
   },

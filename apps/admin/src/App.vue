@@ -1,7 +1,7 @@
 <template>
   <el-container class="app-shell">
     <el-aside width="220px" class="sidebar">
-      <h1>Petcare Admin</h1>
+      <h1>宠伴管家</h1>
       <el-menu router :default-active="$route.path">
         <el-menu-item index="/">工作台</el-menu-item>
         <el-menu-item index="/bookings">预约管理</el-menu-item>

@@ -11,7 +11,7 @@ export class AuthService {
   async mockLogin(input: MockLoginDto = {}) {
     return this.login({
       phone: input.phone ?? "18800000000",
-      nickname: input.nickname ?? "Mock Customer",
+      nickname: input.nickname ?? "默认客户",
       role: input.role ?? UserRole.Customer
     });
   }
@@ -19,7 +19,7 @@ export class AuthService {
   async adminLogin(input: MockLoginDto = {}) {
     return this.login({
       phone: input.phone ?? "19900000000",
-      nickname: input.nickname ?? "Store Admin",
+      nickname: input.nickname ?? "门店管理员",
       role: UserRole.Admin
     });
   }

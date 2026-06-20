@@ -1,12 +1,12 @@
 {
   "name": "petcare-miniapp",
   "appid": "__UNI__PETCARE",
-  "description": "Customer mini program for petcare bookings.",
+  "description": "宠伴管家用户端小程序。",
   "versionName": "0.1.0",
   "versionCode": "100",
   "transformPx": false,
   "h5": {
-    "title": "Petcare"
+    "title": "宠伴管家"
   },
   "mp-weixin": {
     "appid": "",

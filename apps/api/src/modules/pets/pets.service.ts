@@ -25,7 +25,7 @@ export class PetsService {
     });
 
     if (!pet) {
-      throw new NotFoundException("Pet not found");
+      throw new NotFoundException("宠物档案不存在");
     }
 
     return serializeEntity(pet);
@@ -73,7 +73,7 @@ export class PetsService {
     const count = await this.prisma.pet.count({ where: { id } });
 
     if (count === 0) {
-      throw new NotFoundException("Pet not found");
+      throw new NotFoundException("宠物档案不存在");
     }
   }
 }

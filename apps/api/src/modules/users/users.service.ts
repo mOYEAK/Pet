@@ -36,7 +36,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException("用户不存在");
     }
 
     return serializeEntity(user);

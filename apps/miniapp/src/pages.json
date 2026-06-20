@@ -3,43 +3,43 @@
     {
       "path": "pages/home/index",
       "style": {
-        "navigationBarTitleText": "Petcare"
+        "navigationBarTitleText": "宠伴管家"
       }
     },
     {
       "path": "pages/services/index",
       "style": {
-        "navigationBarTitleText": "Services"
+        "navigationBarTitleText": "服务项目"
       }
     },
     {
       "path": "pages/pets/index",
       "style": {
-        "navigationBarTitleText": "Pets"
+        "navigationBarTitleText": "宠物档案"
       }
     },
     {
       "path": "pages/bookings/index",
       "style": {
-        "navigationBarTitleText": "Bookings"
+        "navigationBarTitleText": "我的预约"
       }
     },
     {
       "path": "pages/member/index",
       "style": {
-        "navigationBarTitleText": "Member"
+        "navigationBarTitleText": "会员中心"
       }
     },
     {
       "path": "pages/ai/index",
       "style": {
-        "navigationBarTitleText": "AI Service"
+        "navigationBarTitleText": "智能客服"
       }
     }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "Petcare",
+    "navigationBarTitleText": "宠伴管家",
     "navigationBarBackgroundColor": "#ffffff",
     "backgroundColor": "#f8fafc"
   },
@@ -50,23 +50,23 @@
     "list": [
       {
         "pagePath": "pages/home/index",
-        "text": "Home"
+        "text": "首页"
       },
       {
         "pagePath": "pages/services/index",
-        "text": "Services"
+        "text": "服务"
       },
       {
         "pagePath": "pages/pets/index",
-        "text": "Pets"
+        "text": "宠物"
       },
       {
         "pagePath": "pages/bookings/index",
-        "text": "Bookings"
+        "text": "预约"
       },
       {
         "pagePath": "pages/member/index",
-        "text": "Member"
+        "text": "会员"
       }
     ]
   }

@@ -25,7 +25,7 @@
         <template #default="{ row }">{{ formatMoney(row.paidAmount) }}</template>
       </el-table-column>
       <el-table-column label="支付方式" width="130">
-        <template #default="{ row }">{{ fallback(row.payMethod) }}</template>
+        <template #default="{ row }">{{ payMethodText[row.payMethod ?? ""] ?? fallback(row.payMethod) }}</template>
       </el-table-column>
       <el-table-column label="状态" width="110">
         <template #default="{ row }">{{ orderStatusText[row.status] ?? row.status }}</template>
@@ -46,6 +46,12 @@ import { orderStatusText } from "../utils/status";
 
 const orders = ref<Order[]>([]);
 const loading = ref(false);
+const payMethodText: Record<string, string> = {
+  STORE_PAY: "到店支付",
+  MEMBER_BALANCE: "会员余额",
+  PACKAGE_CARD: "套餐卡",
+  MOCK_PAY: "模拟支付"
+};
 
 async function load() {
   loading.value = true;

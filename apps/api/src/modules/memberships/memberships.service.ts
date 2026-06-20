@@ -24,7 +24,7 @@ export class MembershipsService {
     });
 
     if (!membership) {
-      throw new NotFoundException("Membership not found");
+      throw new NotFoundException("会员信息不存在");
     }
 
     return serializeEntity(membership);
