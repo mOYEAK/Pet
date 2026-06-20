@@ -1,0 +1,73 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "Petcare"
+      }
+    },
+    {
+      "path": "pages/services/index",
+      "style": {
+        "navigationBarTitleText": "Services"
+      }
+    },
+    {
+      "path": "pages/pets/index",
+      "style": {
+        "navigationBarTitleText": "Pets"
+      }
+    },
+    {
+      "path": "pages/bookings/index",
+      "style": {
+        "navigationBarTitleText": "Bookings"
+      }
+    },
+    {
+      "path": "pages/member/index",
+      "style": {
+        "navigationBarTitleText": "Member"
+      }
+    },
+    {
+      "path": "pages/ai/index",
+      "style": {
+        "navigationBarTitleText": "AI Service"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "Petcare",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f8fafc"
+  },
+  "tabBar": {
+    "color": "#64748b",
+    "selectedColor": "#2563eb",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "Home"
+      },
+      {
+        "pagePath": "pages/services/index",
+        "text": "Services"
+      },
+      {
+        "pagePath": "pages/pets/index",
+        "text": "Pets"
+      },
+      {
+        "pagePath": "pages/bookings/index",
+        "text": "Bookings"
+      },
+      {
+        "pagePath": "pages/member/index",
+        "text": "Member"
+      }
+    ]
+  }
+}
