@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <PageNav title="宠物档案" />
     <view class="page-header">
       <text class="title">宠物档案</text>
       <text class="subtitle">维护宠物基础信息，预约时可直接选择。</text>
@@ -51,6 +52,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
+import PageNav from "../../components/PageNav.vue";
 import { api, getCurrentUser, type Pet, type User } from "../../api/client";
 import { fallback } from "../../utils/format";
 import { petTypeText } from "../../utils/status";

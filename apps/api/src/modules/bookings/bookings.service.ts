@@ -151,7 +151,7 @@ export class BookingsService {
   }
 
   private parseDateTime(date: string, time: string) {
-    const value = /^\d{2}:\d{2}$/.test(time) ? `${date}T${time}:00.000Z` : time;
+    const value = /^\d{2}:\d{2}$/.test(time) ? this.parseShanghaiDateTime(date, time) : time;
     const parsed = new Date(value);
 
     if (Number.isNaN(parsed.getTime())) {
@@ -159,5 +159,12 @@ export class BookingsService {
     }
 
     return parsed;
+  }
+
+  private parseShanghaiDateTime(date: string, time: string) {
+    const [year, month, day] = date.split("-").map(Number);
+    const [hour, minute] = time.split(":").map(Number);
+    const utcTime = Date.UTC(year, month - 1, day, hour - 8, minute, 0, 0);
+    return new Date(utcTime).toISOString();
   }
 }

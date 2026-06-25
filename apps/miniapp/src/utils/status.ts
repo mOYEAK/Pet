@@ -6,6 +6,25 @@ export const bookingStatusText: Record<string, string> = {
   CANCELLED: "已取消"
 };
 
+export const orderStatusText: Record<string, string> = {
+  PENDING_PAYMENT: "待支付",
+  PAID: "已支付",
+  COMPLETED: "已完成",
+  CANCELLED: "已取消",
+  REFUNDED: "已退款"
+};
+
+export const payMethodText: Record<string, string> = {
+  STORE_PAY: "到店支付",
+  MEMBER_BALANCE: "会员余额",
+  MOCK_PAY: "模拟支付"
+};
+
+export const consumptionTypeText: Record<string, string> = {
+  ORDER_PAYMENT: "订单支付",
+  MEMBER_BALANCE_PAYMENT: "会员余额支付"
+};
+
 export const petTypeText: Record<string, string> = {
   CAT: "猫咪",
   DOG: "狗狗",

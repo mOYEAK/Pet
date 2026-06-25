@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <PageNav title="我的预约" />
     <view class="page-header">
       <text class="title">我的预约</text>
       <text class="subtitle">选择宠物、服务和到店时间，提交后等待门店确认。</text>
@@ -14,10 +15,10 @@
         <view class="field picker-field">服务：{{ selectedServiceLabel }}</view>
       </picker>
       <picker mode="date" :value="form.bookingDate" @change="onDateChange">
-        <view class="field picker-field">日期：{{ form.bookingDate }}</view>
+        <view class="field picker-field">到店日期：{{ form.bookingDate }}</view>
       </picker>
-      <picker mode="time" :value="form.startTime" @change="onTimeChange">
-        <view class="field picker-field">时间：{{ form.startTime }}</view>
+      <picker :range="timeSlotOptions" range-key="label" @change="onTimeChange">
+        <view class="field picker-field">预约时间：{{ selectedTimeSlotLabel }}</view>
       </picker>
       <textarea v-model="form.remark" class="textarea" placeholder="备注，例如宠物特殊情况" />
       <button class="primary-button" :disabled="submitting" @click="createBooking">
@@ -40,6 +41,9 @@
           </view>
           <text class="muted">宠物：{{ booking.pet?.name ?? booking.petId }}</text>
           <text class="muted">时间：{{ formatDateTime(booking.startTime) }} - {{ formatDateTime(booking.endTime) }}</text>
+          <text class="muted">
+            订单：{{ booking.order ? orderStatusText[booking.order.status] ?? booking.order.status : "待门店生成" }}
+          </text>
           <text class="notes">{{ booking.remark || "暂无备注" }}</text>
         </view>
       </view>
@@ -49,9 +53,10 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
+import PageNav from "../../components/PageNav.vue";
 import { api, getCurrentUser, type Booking, type Pet, type ServiceItem, type User } from "../../api/client";
 import { formatDateTime, formatMoney } from "../../utils/format";
-import { bookingStatusText } from "../../utils/status";
+import { bookingStatusText, orderStatusText } from "../../utils/status";
 
 const user = ref<User | null>(null);
 const pets = ref<Pet[]>([]);
@@ -59,12 +64,21 @@ const services = ref<ServiceItem[]>([]);
 const bookings = ref<Booking[]>([]);
 const loading = ref(false);
 const submitting = ref(false);
+const timeSlotOptions = [
+  { label: "09:00 - 10:30", startTime: "09:00", endTime: "10:30" },
+  { label: "10:30 - 12:00", startTime: "10:30", endTime: "12:00" },
+  { label: "12:00 - 13:30", startTime: "12:00", endTime: "13:30" },
+  { label: "13:30 - 15:00", startTime: "13:30", endTime: "15:00" },
+  { label: "15:00 - 16:30", startTime: "15:00", endTime: "16:30" },
+  { label: "16:30 - 18:00", startTime: "16:30", endTime: "18:00" }
+];
 
 const form = reactive({
   petId: "",
   serviceId: "",
   bookingDate: today(),
-  startTime: "10:00",
+  startTime: "09:00",
+  endTime: "10:30",
   remark: ""
 });
 
@@ -79,6 +93,9 @@ const serviceOptions = computed(() =>
 const selectedPetLabel = computed(() => petOptions.value.find((option) => option.value === form.petId)?.label ?? "请选择宠物");
 const selectedServiceLabel = computed(
   () => serviceOptions.value.find((option) => option.value === form.serviceId)?.label ?? "请选择服务"
+);
+const selectedTimeSlotLabel = computed(
+  () => timeSlotOptions.find((option) => option.startTime === form.startTime)?.label ?? "请选择预约时间"
 );
 
 function today() {
@@ -100,8 +117,10 @@ function onDateChange(event: { detail: { value: string } }) {
   form.bookingDate = event.detail.value;
 }
 
-function onTimeChange(event: { detail: { value: string } }) {
-  form.startTime = event.detail.value;
+function onTimeChange(event: { detail: { value: number } }) {
+  const slot = timeSlotOptions[event.detail.value] ?? timeSlotOptions[0];
+  form.startTime = slot.startTime;
+  form.endTime = slot.endTime;
 }
 
 async function ensureUser() {
@@ -164,6 +183,7 @@ async function createBooking() {
       serviceId: form.serviceId,
       bookingDate: form.bookingDate,
       startTime: form.startTime,
+      endTime: form.endTime,
       remark: form.remark.trim() || undefined
     });
     form.remark = "";

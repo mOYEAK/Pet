@@ -15,8 +15,10 @@ function utcDate(date: string) {
   return new Date(`${date}T00:00:00.000Z`);
 }
 
-function utcDateTime(date: string, time: string) {
-  return new Date(`${date}T${time}:00.000Z`);
+function storeDateTime(date: string, time: string) {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  return new Date(Date.UTC(year, month - 1, day, hour - 8, minute, 0, 0));
 }
 
 async function main() {
@@ -147,6 +149,9 @@ async function main() {
   const booking = await prisma.booking.upsert({
     where: { id: "booking_demo_confirmed" },
     update: {
+      bookingDate: utcDate("2026-06-21"),
+      startTime: storeDateTime("2026-06-21", "10:00"),
+      endTime: storeDateTime("2026-06-21", "11:30"),
       remark: "第一次到店，请温柔一些。"
     },
     create: {
@@ -155,8 +160,8 @@ async function main() {
       petId: pet.id,
       serviceId: catBath.id,
       bookingDate: utcDate("2026-06-21"),
-      startTime: utcDateTime("2026-06-21", "10:00"),
-      endTime: utcDateTime("2026-06-21", "11:30"),
+      startTime: storeDateTime("2026-06-21", "10:00"),
+      endTime: storeDateTime("2026-06-21", "11:30"),
       status: BookingStatus.CONFIRMED,
       remark: "第一次到店，请温柔一些。"
     }

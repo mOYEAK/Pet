@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <PageNav title="服务项目" />
     <view class="page-header">
       <text class="title">服务项目</text>
       <text class="subtitle">选择适合宠物的洗护、美容或护理服务。</text>
@@ -29,6 +30,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import PageNav from "../../components/PageNav.vue";
 import { api, type ServiceItem } from "../../api/client";
 import { formatMoney } from "../../utils/format";
 import { petTypeText, sizeTypeText } from "../../utils/status";

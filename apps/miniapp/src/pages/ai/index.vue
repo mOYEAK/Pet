@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <PageNav title="智能客服" />
     <view class="card">
       <text class="title">智能客服</text>
       <text class="subtitle">智能客服入口已预留。</text>
@@ -7,6 +8,10 @@
     </view>
   </view>
 </template>
+
+<script setup lang="ts">
+import PageNav from "../../components/PageNav.vue";
+</script>
 
 <style scoped>
 .page {

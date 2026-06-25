@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <PageNav title="宠伴管家" home />
     <view class="hero">
       <text class="eyebrow">单门店宠物洗护预约</text>
       <text class="title">宠伴管家</text>
@@ -38,6 +39,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import PageNav from "../../components/PageNav.vue";
 import { api, getCurrentUser, type ServiceItem, type User } from "../../api/client";
 import { formatMoney } from "../../utils/format";
 

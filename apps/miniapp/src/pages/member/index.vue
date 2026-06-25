@@ -1,5 +1,6 @@
 <template>
   <view class="page">
+    <PageNav title="会员中心" />
     <view class="page-header">
       <text class="title">会员中心</text>
       <text class="subtitle">查看会员等级、储值余额和积分。</text>
@@ -26,27 +27,51 @@
     </view>
 
     <view class="card">
-      <text class="card-title">会员说明</text>
-      <text class="muted">当前版本展示会员基础信息，套餐卡和消费记录将在后续页面继续完善。</text>
+      <view class="section-header">
+        <text class="card-title">消费记录</text>
+        <text class="link" @click="load">刷新</text>
+      </view>
+      <view v-if="records.length === 0" class="muted">暂无消费记录。</view>
+      <view v-else class="record-list">
+        <view v-for="record in records.slice(0, 8)" :key="record.id" class="record-item">
+          <view>
+            <text class="record-title">{{ consumptionTypeText[record.type] ?? record.type }}</text>
+            <text class="muted">{{ record.description || "暂无说明" }}</text>
+          </view>
+          <view class="record-right">
+            <text class="record-amount">-{{ formatMoney(record.amount) }}</text>
+            <text class="muted">{{ formatDateTime(record.createdAt) }}</text>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { api, getCurrentUser, type Membership } from "../../api/client";
-import { formatMoney } from "../../utils/format";
+import PageNav from "../../components/PageNav.vue";
+import { api, getCurrentUser, type ConsumptionRecord, type Membership } from "../../api/client";
+import { formatDateTime, formatMoney } from "../../utils/format";
+import { consumptionTypeText } from "../../utils/status";
 
 const membership = ref<Membership | null>(null);
+const records = ref<ConsumptionRecord[]>([]);
 const loading = ref(false);
 
 async function load() {
   loading.value = true;
   try {
     const user = await getCurrentUser();
-    membership.value = await api.membership(user.id);
+    const [membershipInfo, consumptionRecords] = await Promise.all([
+      api.membership(user.id),
+      api.consumptionRecords(user.id)
+    ]);
+    membership.value = membershipInfo;
+    records.value = consumptionRecords;
   } catch (error) {
     membership.value = null;
+    records.value = [];
     uni.showToast({
       title: error instanceof Error ? error.message : "会员信息加载失败",
       icon: "none"
@@ -68,7 +93,10 @@ onMounted(load);
 .page-header,
 .card,
 .member-card,
-.stat {
+.stat,
+.record-list,
+.record-item,
+.record-right {
   display: flex;
   flex-direction: column;
 }
@@ -117,6 +145,39 @@ onMounted(load);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.section-header,
+.record-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.record-list {
+  gap: 12px;
+}
+
+.record-item {
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.record-right {
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.record-title,
+.record-amount {
+  font-weight: 700;
+}
+
+.record-amount,
+.link {
+  color: #2563eb;
 }
 
 .stat {

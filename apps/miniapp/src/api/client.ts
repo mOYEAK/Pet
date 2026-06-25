@@ -46,6 +46,7 @@ export interface Booking {
   remark: string | null;
   pet?: Pet;
   service?: ServiceItem;
+  order?: Order | null;
 }
 
 export interface Membership {
@@ -54,6 +55,26 @@ export interface Membership {
   level: string;
   balance: number;
   points: number;
+}
+
+export interface Order {
+  id: string;
+  bookingId: string;
+  userId: string;
+  totalAmount: number;
+  paidAmount: number;
+  payMethod: string | null;
+  status: string;
+}
+
+export interface ConsumptionRecord {
+  id: string;
+  userId: string;
+  orderId: string | null;
+  amount: number;
+  type: string;
+  description: string | null;
+  createdAt: string;
 }
 
 export interface CreatePetPayload {
@@ -74,6 +95,7 @@ export interface CreateBookingPayload {
   serviceId: string;
   bookingDate: string;
   startTime: string;
+  endTime?: string;
   remark?: string;
 }
 
@@ -129,5 +151,7 @@ export const api = {
   createPet: (payload: CreatePetPayload) => request<Pet>("/pets", "POST", payload),
   bookings: (userId: string) => request<Booking[]>(`/bookings?userId=${encodeURIComponent(userId)}`),
   createBooking: (payload: CreateBookingPayload) => request<Booking>("/bookings", "POST", payload),
-  membership: (userId: string) => request<Membership>(`/memberships/by-user/${encodeURIComponent(userId)}`)
+  membership: (userId: string) => request<Membership>(`/memberships/by-user/${encodeURIComponent(userId)}`),
+  consumptionRecords: (userId: string) =>
+    request<ConsumptionRecord[]>(`/memberships/consumption-records?userId=${encodeURIComponent(userId)}`)
 };

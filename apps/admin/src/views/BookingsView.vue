@@ -26,8 +26,14 @@
           <el-tag :type="bookingStatusType[row.status] ?? 'info'">{{ bookingStatusText[row.status] ?? row.status }}</el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="订单" width="120">
+        <template #default="{ row }">
+          <el-tag v-if="row.order" type="success">已生成</el-tag>
+          <el-tag v-else type="info">未生成</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="备注" prop="remark" min-width="180" show-overflow-tooltip />
-      <el-table-column label="操作" width="280" fixed="right">
+      <el-table-column label="操作" width="370" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" :disabled="row.status === 'CONFIRMED'" @click="setStatus(row.id, 'CONFIRMED')">
             确认
@@ -37,6 +43,9 @@
           </el-button>
           <el-button link type="info" :disabled="row.status === 'COMPLETED'" @click="setStatus(row.id, 'COMPLETED')">
             完成
+          </el-button>
+          <el-button link type="warning" :disabled="Boolean(row.order) || row.status === 'CANCELLED'" @click="createOrder(row)">
+            生成订单
           </el-button>
           <el-button link type="danger" :disabled="row.status === 'CANCELLED'" @click="cancel(row.id)">取消</el-button>
         </template>
@@ -83,6 +92,16 @@ async function cancel(id: string) {
     await load();
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : "取消失败");
+  }
+}
+
+async function createOrder(booking: Booking) {
+  try {
+    await api.createOrderFromBooking(booking.id);
+    ElMessage.success("订单已生成");
+    await load();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "生成订单失败");
   }
 }
 

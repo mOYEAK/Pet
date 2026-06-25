@@ -84,6 +84,7 @@ export interface Order {
   updatedAt: string;
   user?: User;
   booking?: Booking;
+  consumptionRecords?: ConsumptionRecord[];
 }
 
 export interface Membership {
@@ -95,6 +96,18 @@ export interface Membership {
   createdAt: string;
   updatedAt: string;
   user?: User;
+}
+
+export interface ConsumptionRecord {
+  id: string;
+  userId: string;
+  orderId: string | null;
+  amount: number;
+  type: string;
+  description: string | null;
+  createdAt: string;
+  user?: User;
+  order?: Order | null;
 }
 
 export interface PackageCard {
@@ -177,8 +190,19 @@ export const api = {
     request<Booking>(`/api/bookings/${id}/cancel`, {
       method: "PATCH"
     }),
+  createOrderFromBooking: (bookingId: string) =>
+    request<Order>("/api/orders/from-booking", {
+      method: "POST",
+      body: JSON.stringify({ bookingId })
+    }),
   users: () => request<User[]>("/api/users"),
   pets: () => request<Pet[]>("/api/pets"),
   orders: () => request<Order[]>("/api/orders"),
+  payOrder: (id: string, payload: { payMethod: string; paidAmount?: number }) =>
+    request<Order>(`/api/orders/${id}/pay`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }),
+  consumptionRecords: () => request<ConsumptionRecord[]>("/api/memberships/consumption-records"),
   memberships: () => request<Membership[]>("/api/memberships")
 };
