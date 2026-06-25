@@ -22,6 +22,10 @@ export class PayOrderDto {
   payMethod!: string;
 
   @IsOptional()
+  @IsString()
+  packageCardId?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)

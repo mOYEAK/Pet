@@ -25,8 +25,16 @@
       <el-table-column label="余额" width="120">
         <template #default="{ row }">{{ formatMoney(row.membership?.balance) }}</template>
       </el-table-column>
+      <el-table-column label="套餐卡" width="100">
+        <template #default="{ row }">{{ row.packageCards?.length ?? 0 }}</template>
+      </el-table-column>
       <el-table-column label="创建时间" width="160">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+      </el-table-column>
+      <el-table-column label="操作" width="110" fixed="right">
+        <template #default="{ row }">
+          <el-button link type="primary" @click="router.push(`/customers/${row.id}`)">详情</el-button>
+        </template>
       </el-table-column>
     </el-table>
   </section>
@@ -35,9 +43,11 @@
 <script setup lang="ts">
 import { ElMessage } from "element-plus";
 import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import { api, type User } from "../api/client";
 import { formatDateTime, formatMoney } from "../utils/format";
 
+const router = useRouter();
 const users = ref<User[]>([]);
 const loading = ref(false);
 const customers = computed(() => users.value);

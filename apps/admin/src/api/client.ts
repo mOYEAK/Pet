@@ -19,8 +19,15 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   pets?: Pet[];
+  bookings?: Booking[];
+  orders?: Order[];
   membership?: Membership | null;
   packageCards?: PackageCard[];
+  consumptionRecords?: ConsumptionRecord[];
+  followUpTasks?: FollowUpTask[];
+  lastActivityAt?: string | null;
+  inactiveDays?: number | null;
+  recallMessage?: string;
 }
 
 export interface Pet {
@@ -37,6 +44,7 @@ export interface Pet {
   createdAt: string;
   updatedAt: string;
   user?: User;
+  bookings?: Booking[];
 }
 
 export interface ServiceItem {
@@ -120,7 +128,48 @@ export interface PackageCard {
   status: string;
   createdAt: string;
   updatedAt: string;
+  user?: User;
   service?: ServiceItem;
+}
+
+export interface KnowledgeBaseItem {
+  id: string;
+  title: string;
+  content: string;
+  category: string | null;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BusinessAssistantResponse {
+  answer: string;
+  data: {
+    todayRevenue: number;
+    monthRevenue: number;
+    todayBookings: number;
+    monthBookings: number;
+    pendingBookings: number;
+    customers: number;
+    memberConsumption: number;
+    popularServices: Array<{
+      id: string;
+      name: string;
+      bookingCount: number;
+    }>;
+  };
+}
+
+export interface FollowUpTask {
+  id: string;
+  userId: string;
+  title: string;
+  content: string | null;
+  status: string;
+  dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: User;
 }
 
 export interface ServicePayload {
@@ -132,6 +181,13 @@ export interface ServicePayload {
   durationMinutes: number;
   description?: string;
   notice?: string;
+  enabled?: boolean;
+}
+
+export interface KnowledgeBasePayload {
+  title: string;
+  content: string;
+  category?: string;
   enabled?: boolean;
 }
 
@@ -196,13 +252,43 @@ export const api = {
       body: JSON.stringify({ bookingId })
     }),
   users: () => request<User[]>("/api/users"),
+  user: (id: string) => request<User>(`/api/users/${id}`),
   pets: () => request<Pet[]>("/api/pets"),
   orders: () => request<Order[]>("/api/orders"),
-  payOrder: (id: string, payload: { payMethod: string; paidAmount?: number }) =>
+  payOrder: (id: string, payload: { payMethod: string; paidAmount?: number; packageCardId?: string }) =>
     request<Order>(`/api/orders/${id}/pay`, {
       method: "PATCH",
       body: JSON.stringify(payload)
     }),
   consumptionRecords: () => request<ConsumptionRecord[]>("/api/memberships/consumption-records"),
-  memberships: () => request<Membership[]>("/api/memberships")
+  memberships: () => request<Membership[]>("/api/memberships"),
+  packageCards: (userId?: string) => request<PackageCard[]>(`/api/memberships/package-cards${userId ? `?userId=${userId}` : ""}`),
+  knowledgeBase: () => request<KnowledgeBaseItem[]>("/api/knowledge-base"),
+  createKnowledgeBase: (payload: KnowledgeBasePayload) =>
+    request<KnowledgeBaseItem>("/api/knowledge-base", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+  updateKnowledgeBase: (id: string, payload: Partial<KnowledgeBasePayload>) =>
+    request<KnowledgeBaseItem>(`/api/knowledge-base/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }),
+  businessAssistant: (message: string) =>
+    request<BusinessAssistantResponse>("/api/ai/business-assistant", {
+      method: "POST",
+      body: JSON.stringify({ message })
+    }),
+  churnRiskCustomers: (days: number) => request<User[]>(`/api/follow-up/churn-risk?days=${days}`),
+  followUpTasks: () => request<FollowUpTask[]>("/api/follow-up/tasks"),
+  createFollowUpTask: (payload: { userId: string; title: string; content?: string; dueDate?: string }) =>
+    request<FollowUpTask>("/api/follow-up/tasks", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+  updateFollowUpTaskStatus: (id: string, status: string) =>
+    request<FollowUpTask>(`/api/follow-up/tasks/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status })
+    })
 };

@@ -11,7 +11,16 @@ export class PetsService {
   async list(query: ListPetsQueryDto) {
     const pets = await this.prisma.pet.findMany({
       where: { userId: query.userId },
-      include: { user: true },
+      include: {
+        user: true,
+        bookings: {
+          include: {
+            service: true,
+            order: true
+          },
+          orderBy: { startTime: "desc" }
+        }
+      },
       orderBy: { createdAt: "desc" }
     });
 
@@ -21,7 +30,16 @@ export class PetsService {
   async getById(id: string) {
     const pet = await this.prisma.pet.findUnique({
       where: { id },
-      include: { user: true }
+      include: {
+        user: true,
+        bookings: {
+          include: {
+            service: true,
+            order: true
+          },
+          orderBy: { startTime: "desc" }
+        }
+      }
     });
 
     if (!pet) {

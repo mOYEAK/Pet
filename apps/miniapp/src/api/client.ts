@@ -77,6 +77,16 @@ export interface ConsumptionRecord {
   createdAt: string;
 }
 
+export interface AiCustomerServiceResponse {
+  answer: string;
+  availableSlots: Array<{
+    date: string;
+    startTime: string;
+    endTime: string;
+  }>;
+  services: ServiceItem[];
+}
+
 export interface CreatePetPayload {
   userId: string;
   name: string;
@@ -121,9 +131,7 @@ function request<T>(path: string, method: "GET" | "POST" = "GET", data?: object)
         }
 
         const body = response.data as { message?: string | string[] } | undefined;
-        const message = Array.isArray(body?.message)
-          ? body?.message.join("，")
-          : body?.message || `请求失败，状态码 ${statusCode}`;
+        const message = Array.isArray(body?.message) ? body.message.join("，") : body?.message || `请求失败，状态码 ${statusCode}`;
         reject(new Error(message));
       },
       fail(error) {
@@ -153,5 +161,7 @@ export const api = {
   createBooking: (payload: CreateBookingPayload) => request<Booking>("/bookings", "POST", payload),
   membership: (userId: string) => request<Membership>(`/memberships/by-user/${encodeURIComponent(userId)}`),
   consumptionRecords: (userId: string) =>
-    request<ConsumptionRecord[]>(`/memberships/consumption-records?userId=${encodeURIComponent(userId)}`)
+    request<ConsumptionRecord[]>(`/memberships/consumption-records?userId=${encodeURIComponent(userId)}`),
+  askCustomerService: (payload: { userId?: string; message: string }) =>
+    request<AiCustomerServiceResponse>("/ai/customer-service", "POST", payload)
 };

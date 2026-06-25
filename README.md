@@ -1,14 +1,14 @@
 # 宠伴管家
 
-宠伴管家是面向单门店宠物洗护场景的预约、会员、订单和客户管理系统。
+宠伴管家是一个面向单门店宠物洗护场景的预约、会员、订单、客户、宠物档案和 AI 经营辅助系统。
 
-当前仓库先搭建基础 Monorepo 框架，后续按 MVP 优先级逐步补齐业务闭环：
+## 项目结构
 
 - `apps/admin`: Vue 3 + Element Plus 商家后台
-- `apps/miniapp`: uni-app + Vue 3 用户端小程序
+- `apps/miniapp`: uni-app + Vue 3 用户端 H5/小程序
 - `apps/api`: NestJS + Prisma 后端服务
-- `packages/shared`: 跨端共享类型、枚举和工具
-- `packages/agent`: AI Agent 提示词、工具和 RAG 逻辑预留
+- `packages/shared`: 跨端共享类型和枚举
+- `packages/agent`: Agent 提示词和工具契约预留
 
 ## 快速开始
 
@@ -25,7 +25,13 @@ pnpm dev:admin
 pnpm dev:miniapp
 ```
 
-数据库：
+默认访问：
+
+- API: `http://localhost:3000`
+- 商家后台: `http://localhost:5173`
+- 用户端 H5: `http://localhost:5174`
+
+## 数据库
 
 ```bash
 docker compose up -d postgres redis
@@ -40,5 +46,31 @@ pnpm --filter @petcare/api prisma:seed
 
 - 管理员：`19900000000`
 - 用户：`18800000000`
+
+## 已完成的核心流程
+
+- 用户端查看服务、维护宠物档案、创建预约、查看预约和会员消费记录。
+- 后台管理服务、预约、客户、宠物、订单、会员和套餐卡。
+- 后台可从预约生成订单，并支持到店支付、会员余额、套餐卡核销和模拟支付。
+- 套餐卡核销会校验服务匹配、有效期和剩余次数，并写入消费记录。
+- 后台预约日历按固定门店时间段展示当天预约。
+- 用户端智能客服可基于服务、预约时段和知识库内容回答常见问题。
+
+## 后台增强模块
+
+- 知识库管理：维护智能客服引用的预约规则、护理注意事项和门店说明。
+- AI 经营助手：基于订单、预约、会员消费和热门服务生成经营分析。
+- 客户召回：筛选 30/60/90 天未消费客户，生成召回文案并创建跟进任务。
+
+## 常用验证命令
+
+```bash
+pnpm --filter @petcare/api typecheck
+pnpm --filter @petcare/admin typecheck
+pnpm --filter @petcare/miniapp typecheck
+pnpm --filter @petcare/api build
+pnpm --filter @petcare/admin build
+pnpm --filter @petcare/miniapp build:h5
+```
 
 更多结构说明见 [docs/project-structure.md](docs/project-structure.md)。

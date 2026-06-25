@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { BookingStatus, OrderStatus, Prisma } from "@prisma/client";
+import { BookingStatus, OrderStatus, PackageCardStatus, Prisma } from "@prisma/client";
 import { serializeEntity } from "../../common/serialize";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateOrderFromBookingDto, ListOrdersQueryDto, PayOrderDto } from "./dto";
@@ -7,6 +7,7 @@ import { CreateOrderFromBookingDto, ListOrdersQueryDto, PayOrderDto } from "./dt
 const PAY_METHOD_TEXT: Record<string, string> = {
   STORE_PAY: "到店支付",
   MEMBER_BALANCE: "会员余额",
+  PACKAGE_CARD: "套餐卡",
   MOCK_PAY: "模拟支付"
 };
 
@@ -20,16 +21,7 @@ export class OrdersService {
         userId: query.userId,
         status: query.status as OrderStatus | undefined
       },
-      include: {
-        user: true,
-        booking: {
-          include: {
-            pet: true,
-            service: true
-          }
-        },
-        consumptionRecords: true
-      },
+      include: this.orderInclude(),
       orderBy: { createdAt: "desc" }
     });
 
@@ -39,16 +31,7 @@ export class OrdersService {
   async getById(id: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: {
-        user: true,
-        booking: {
-          include: {
-            pet: true,
-            service: true
-          }
-        },
-        consumptionRecords: true
-      }
+      include: this.orderInclude()
     });
 
     if (!order) {
@@ -119,7 +102,9 @@ export class OrdersService {
       throw new BadRequestException("该订单状态不能支付");
     }
 
-    const paidAmount = new Prisma.Decimal(input.paidAmount ?? order.totalAmount.toNumber());
+    const paidAmount = new Prisma.Decimal(
+      input.payMethod === "PACKAGE_CARD" ? order.totalAmount.toNumber() : (input.paidAmount ?? order.totalAmount.toNumber())
+    );
 
     if (paidAmount.lessThanOrEqualTo(0)) {
       throw new BadRequestException("实收金额必须大于 0");
@@ -146,6 +131,36 @@ export class OrdersService {
         });
       }
 
+      if (input.payMethod === "PACKAGE_CARD") {
+        const packageCard = await tx.packageCard.findFirst({
+          where: input.packageCardId
+            ? { id: input.packageCardId, userId: order.userId }
+            : {
+                userId: order.userId,
+                serviceId: order.booking.serviceId,
+                status: PackageCardStatus.ACTIVE
+              },
+          orderBy: { createdAt: "asc" }
+        });
+
+        if (!packageCard || packageCard.serviceId !== order.booking.serviceId || packageCard.status !== PackageCardStatus.ACTIVE) {
+          throw new BadRequestException("没有可用的套餐卡");
+        }
+
+        if (packageCard.remainingTimes <= 0) {
+          throw new BadRequestException("套餐卡剩余次数不足");
+        }
+
+        if (packageCard.expireDate && packageCard.expireDate < new Date()) {
+          throw new BadRequestException("套餐卡已过期");
+        }
+
+        await tx.packageCard.update({
+          where: { id: packageCard.id },
+          data: { remainingTimes: { decrement: 1 } }
+        });
+      }
+
       await tx.booking.update({
         where: { id: order.bookingId },
         data: { status: BookingStatus.COMPLETED }
@@ -156,7 +171,12 @@ export class OrdersService {
           userId: order.userId,
           orderId: order.id,
           amount: paidAmount,
-          type: input.payMethod === "MEMBER_BALANCE" ? "MEMBER_BALANCE_PAYMENT" : "ORDER_PAYMENT",
+          type:
+            input.payMethod === "MEMBER_BALANCE"
+              ? "MEMBER_BALANCE_PAYMENT"
+              : input.payMethod === "PACKAGE_CARD"
+                ? "PACKAGE_CARD_PAYMENT"
+                : "ORDER_PAYMENT",
           description: `${PAY_METHOD_TEXT[input.payMethod]}：${order.booking.service.name}`
         }
       });

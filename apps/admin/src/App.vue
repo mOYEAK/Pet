@@ -10,6 +10,9 @@
         <el-menu-item index="/pets">宠物档案</el-menu-item>
         <el-menu-item index="/orders">订单管理</el-menu-item>
         <el-menu-item index="/memberships">会员管理</el-menu-item>
+        <el-menu-item index="/knowledge-base">知识库</el-menu-item>
+        <el-menu-item index="/ai-assistant">AI 经营助手</el-menu-item>
+        <el-menu-item index="/follow-ups">客户召回</el-menu-item>
       </el-menu>
     </el-aside>
     <el-main>

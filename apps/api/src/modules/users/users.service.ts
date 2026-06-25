@@ -14,7 +14,9 @@ export class UsersService {
       include: {
         pets: true,
         membership: true,
-        packageCards: true
+        packageCards: {
+          include: { service: true }
+        }
       },
       orderBy: { createdAt: "desc" }
     });
@@ -27,11 +29,36 @@ export class UsersService {
       where: { id },
       include: {
         pets: true,
-        bookings: true,
-        orders: true,
+        bookings: {
+          include: {
+            pet: true,
+            service: true,
+            order: true
+          },
+          orderBy: { startTime: "desc" }
+        },
+        orders: {
+          include: {
+            booking: {
+              include: {
+                pet: true,
+                service: true
+              }
+            },
+            consumptionRecords: true
+          },
+          orderBy: { createdAt: "desc" }
+        },
         membership: true,
-        packageCards: true,
-        consumptionRecords: true
+        packageCards: {
+          include: {
+            service: true
+          },
+          orderBy: { createdAt: "desc" }
+        },
+        consumptionRecords: {
+          orderBy: { createdAt: "desc" }
+        }
       }
     });
 
