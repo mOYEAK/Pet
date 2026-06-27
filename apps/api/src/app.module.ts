@@ -9,6 +9,7 @@ import { MembershipsModule } from "./modules/memberships/memberships.module";
 import { OrdersModule } from "./modules/orders/orders.module";
 import { PetsModule } from "./modules/pets/pets.module";
 import { PrismaModule } from "./modules/prisma/prisma.module";
+import { SettingsModule } from "./modules/settings/settings.module";
 import { ServicesModule } from "./modules/services/services.module";
 import { StatsModule } from "./modules/stats/stats.module";
 import { UsersModule } from "./modules/users/users.module";
@@ -27,6 +28,7 @@ import { UsersModule } from "./modules/users/users.module";
     BookingsModule,
     OrdersModule,
     MembershipsModule,
+    SettingsModule,
     StatsModule
   ]
 })

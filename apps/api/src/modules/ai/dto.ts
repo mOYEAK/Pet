@@ -13,3 +13,16 @@ export class BusinessAssistantDto {
   @IsString()
   message!: string;
 }
+
+export class MarketingCopyDto {
+  @IsString()
+  topic!: string;
+
+  @IsOptional()
+  @IsString()
+  channel?: string;
+
+  @IsOptional()
+  @IsString()
+  tone?: string;
+}

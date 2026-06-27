@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { BookingStatus, OrderStatus, UserRole } from "@prisma/client";
 import { serializeEntity } from "../../common/serialize";
 import { PrismaService } from "../prisma/prisma.service";
-import { BusinessAssistantDto, CustomerServiceChatDto } from "./dto";
+import { BusinessAssistantDto, CustomerServiceChatDto, MarketingCopyDto } from "./dto";
 
 const TIME_SLOTS = [
   { label: "09:00 - 10:30", start: "09:00", end: "10:30" },
@@ -64,6 +64,74 @@ export class AiService {
 
   async businessAssistant(input: BusinessAssistantDto) {
     const message = input.message.trim();
+    const data = await this.getBusinessData();
+    const answer = this.composeBusinessAnswer(message, data);
+
+    await this.prisma.aiConversation.create({
+      data: {
+        channel: "admin",
+        role: "assistant",
+        content: answer,
+        toolCalls: data
+      }
+    });
+
+    return serializeEntity({ answer, data });
+  }
+
+  async marketingCopy(input: MarketingCopyDto) {
+    const [services, availableSlots, businessData] = await Promise.all([
+      this.prisma.service.findMany({
+        where: { enabled: true },
+        orderBy: { basePrice: "asc" },
+        take: 5
+      }),
+      this.getAvailableSlots(this.resolveDate("明天")),
+      this.getBusinessData()
+    ]);
+    const channel = input.channel || "朋友圈";
+    const tone = input.tone || "亲切";
+    const topic = input.topic.trim();
+    const leadService = businessData.popularServices[0] ?? services[0];
+    const serviceLine = services.map((service) => `${service.name} ¥${service.basePrice.toString()}`).join("、");
+    const idleLine = availableSlots.length
+      ? `明日仍有 ${availableSlots.slice(0, 3).map((slot) => `${slot.startTime}-${slot.endTime}`).join("、")} 可约。`
+      : "明日预约较满，可引导客户提前锁定后续档期。";
+    const copy = [
+      `【${topic}】`,
+      channel === "小红书"
+        ? `宠物洗护小提醒来啦：${leadService?.name ?? "门店热门服务"} 最近很受欢迎，适合想让毛孩子清爽出门的家长。`
+        : `宠伴管家本周给老朋友准备了${topic}，让宝贝舒服，也让家长更省心。`,
+      `可选服务：${serviceLine}。${idleLine}`,
+      tone === "活泼" ? "带上毛孩子来放松一下吧，干净蓬松的快乐安排上！" : "如需预约，请直接联系门店或在小程序选择合适时间。",
+      "名额按预约顺序保留，特殊体质或害怕吹风的宠物请提前备注。"
+    ].join("\n");
+
+    await this.prisma.aiConversation.create({
+      data: {
+        channel: "admin",
+        role: "assistant",
+        content: copy,
+        toolCalls: {
+          topic,
+          channel,
+          tone,
+          services: services.map((service) => service.id),
+          availableSlots
+        }
+      }
+    });
+
+    return serializeEntity({
+      copy,
+      channel,
+      tone,
+      services,
+      availableSlots
+    });
+  }
+
+  private async getBusinessData() {
     const today = this.startOfShanghaiDay(new Date());
     const tomorrow = new Date(today);
     tomorrow.setUTCDate(today.getUTCDate() + 1);
@@ -95,7 +163,7 @@ export class AiService {
         })
       ]);
 
-    const data = {
+    return {
       todayRevenue: this.sumMoney(todayOrders),
       monthRevenue: this.sumMoney(monthOrders),
       todayBookings,
@@ -106,22 +174,10 @@ export class AiService {
       popularServices: popularServices.map((service) => ({
         id: service.id,
         name: service.name,
+        basePrice: service.basePrice,
         bookingCount: service._count.bookings
       }))
     };
-
-    const answer = this.composeBusinessAnswer(message, data);
-
-    await this.prisma.aiConversation.create({
-      data: {
-        channel: "admin",
-        role: "assistant",
-        content: answer,
-        toolCalls: data
-      }
-    });
-
-    return serializeEntity({ answer, data });
   }
 
   private async findKnowledge(message: string) {
@@ -192,19 +248,7 @@ export class AiService {
     return lines.join("\n");
   }
 
-  private composeBusinessAnswer(
-    message: string,
-    data: {
-      todayRevenue: number;
-      monthRevenue: number;
-      todayBookings: number;
-      monthBookings: number;
-      pendingBookings: number;
-      customers: number;
-      memberConsumption: number;
-      popularServices: Array<{ id: string; name: string; bookingCount: number }>;
-    }
-  ) {
+  private composeBusinessAnswer(message: string, data: Awaited<ReturnType<AiService["getBusinessData"]>>) {
     const popular = data.popularServices.length
       ? data.popularServices.map((service) => `${service.name} ${service.bookingCount} 次`).join("、")
       : "暂无服务预约数据";

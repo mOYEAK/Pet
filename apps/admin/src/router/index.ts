@@ -6,14 +6,18 @@ import CustomersView from "../views/CustomersView.vue";
 import DashboardView from "../views/DashboardView.vue";
 import FollowUpsView from "../views/FollowUpsView.vue";
 import KnowledgeBaseView from "../views/KnowledgeBaseView.vue";
+import LoginView from "../views/LoginView.vue";
+import MarketingAssistantView from "../views/MarketingAssistantView.vue";
 import MembershipsView from "../views/MembershipsView.vue";
 import OrdersView from "../views/OrdersView.vue";
 import PetsView from "../views/PetsView.vue";
 import ServicesView from "../views/ServicesView.vue";
+import SettingsView from "../views/SettingsView.vue";
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: "/login", name: "login", component: LoginView },
     { path: "/", name: "dashboard", component: DashboardView },
     { path: "/bookings", name: "bookings", component: BookingsView },
     { path: "/services", name: "services", component: ServicesView },
@@ -24,7 +28,23 @@ export const router = createRouter({
     { path: "/memberships", name: "memberships", component: MembershipsView },
     { path: "/knowledge-base", name: "knowledge-base", component: KnowledgeBaseView },
     { path: "/ai-assistant", name: "ai-assistant", component: AiAssistantView },
+    { path: "/marketing-assistant", name: "marketing-assistant", component: MarketingAssistantView },
     { path: "/follow-ups", name: "follow-ups", component: FollowUpsView },
+    { path: "/settings", name: "settings", component: SettingsView },
     { path: "/stats", redirect: "/" }
   ]
+});
+
+router.beforeEach((to) => {
+  const token = localStorage.getItem("petcare_admin_token");
+
+  if (to.path !== "/login" && !token) {
+    return "/login";
+  }
+
+  if (to.path === "/login" && token) {
+    return "/";
+  }
+
+  return true;
 });

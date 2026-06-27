@@ -172,6 +172,32 @@ export interface FollowUpTask {
   user?: User;
 }
 
+export interface LoginResult {
+  accessToken: string;
+  user: User;
+}
+
+export interface StoreSettings {
+  name: string;
+  businessHours: string;
+  address: string;
+  phone: string;
+  appointmentSlots: string[];
+  notice: string;
+}
+
+export interface MarketingCopyResponse {
+  copy: string;
+  channel: string;
+  tone: string;
+  services: ServiceItem[];
+  availableSlots: Array<{
+    date: string;
+    startTime: string;
+    endTime: string;
+  }>;
+}
+
 export interface ServicePayload {
   name: string;
   category: string;
@@ -219,6 +245,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  adminLogin: (payload: { phone: string; nickname?: string }) =>
+    request<LoginResult>("/api/auth/admin-login", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
   dashboard: () => request<DashboardStats>("/api/stats/dashboard"),
   services: () => request<ServiceItem[]>("/api/services"),
   createService: (payload: ServicePayload) =>
@@ -290,5 +321,11 @@ export const api = {
     request<FollowUpTask>(`/api/follow-up/tasks/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status })
+    }),
+  storeSettings: () => request<StoreSettings>("/api/settings/store"),
+  marketingCopy: (payload: { topic: string; channel?: string; tone?: string }) =>
+    request<MarketingCopyResponse>("/api/ai/marketing-copy", {
+      method: "POST",
+      body: JSON.stringify(payload)
     })
 };
