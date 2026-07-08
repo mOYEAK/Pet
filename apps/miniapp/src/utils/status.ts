@@ -17,12 +17,20 @@ export const orderStatusText: Record<string, string> = {
 export const payMethodText: Record<string, string> = {
   STORE_PAY: "到店支付",
   MEMBER_BALANCE: "会员余额",
+  PACKAGE_CARD: "套餐卡",
   MOCK_PAY: "模拟支付"
 };
 
 export const consumptionTypeText: Record<string, string> = {
   ORDER_PAYMENT: "订单支付",
-  MEMBER_BALANCE_PAYMENT: "会员余额支付"
+  MEMBER_BALANCE_PAYMENT: "会员余额支付",
+  PACKAGE_CARD_PAYMENT: "套餐卡核销"
+};
+
+export const packageCardStatusText: Record<string, string> = {
+  ACTIVE: "有效",
+  EXPIRED: "已过期",
+  DISABLED: "已停用"
 };
 
 export const petTypeText: Record<string, string> = {

@@ -15,7 +15,7 @@ import ServicesView from "../views/ServicesView.vue";
 import SettingsView from "../views/SettingsView.vue";
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: "/login", name: "login", component: LoginView },
     { path: "/", name: "dashboard", component: DashboardView },

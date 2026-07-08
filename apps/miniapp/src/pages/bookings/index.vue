@@ -44,7 +44,9 @@
           <text class="muted">
             订单：{{ booking.order ? orderStatusText[booking.order.status] ?? booking.order.status : "待门店生成" }}
           </text>
+          <text v-if="booking.order?.payMethod" class="muted">支付方式：{{ payMethodText[booking.order.payMethod] ?? booking.order.payMethod }}</text>
           <text class="notes">{{ booking.remark || "暂无备注" }}</text>
+          <button v-if="canCancel(booking)" class="cancel-button" @click="cancelBooking(booking.id)">取消预约</button>
         </view>
       </view>
     </view>
@@ -56,7 +58,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import PageNav from "../../components/PageNav.vue";
 import { api, getCurrentUser, type Booking, type Pet, type ServiceItem, type User } from "../../api/client";
 import { formatDateTime, formatMoney } from "../../utils/format";
-import { bookingStatusText, orderStatusText } from "../../utils/status";
+import { bookingStatusText, orderStatusText, payMethodText } from "../../utils/status";
 
 const user = ref<User | null>(null);
 const pets = ref<Pet[]>([]);
@@ -199,6 +201,26 @@ async function createBooking() {
   }
 }
 
+function canCancel(booking: Booking) {
+  return booking.status === "PENDING" || booking.status === "CONFIRMED";
+}
+
+async function cancelBooking(id: string) {
+  submitting.value = true;
+  try {
+    await api.cancelBooking(id);
+    uni.showToast({ title: "预约已取消", icon: "success" });
+    await load();
+  } catch (error) {
+    uni.showToast({
+      title: error instanceof Error ? error.message : "取消预约失败",
+      icon: "none"
+    });
+  } finally {
+    submitting.value = false;
+  }
+}
+
 onMounted(load);
 </script>
 
@@ -281,6 +303,12 @@ onMounted(load);
   height: 42px;
   color: #ffffff;
   background: #2563eb;
+}
+
+.cancel-button {
+  height: 38px;
+  color: #dc2626;
+  background: #fee2e2;
 }
 
 .link,

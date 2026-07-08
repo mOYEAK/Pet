@@ -50,6 +50,34 @@ async function main() {
     }
   });
 
+  const dogCustomer = await prisma.user.upsert({
+    where: { phone: "18800000001" },
+    update: {
+      nickname: "小黄主人",
+      role: UserRole.CUSTOMER
+    },
+    create: {
+      id: "user_dog_customer_demo",
+      phone: "18800000001",
+      nickname: "小黄主人",
+      role: UserRole.CUSTOMER
+    }
+  });
+
+  const inactiveCustomer = await prisma.user.upsert({
+    where: { phone: "18800000002" },
+    update: {
+      nickname: "团团主人",
+      role: UserRole.CUSTOMER
+    },
+    create: {
+      id: "user_inactive_customer_demo",
+      phone: "18800000002",
+      nickname: "团团主人",
+      role: UserRole.CUSTOMER
+    }
+  });
+
   const catBath = await prisma.service.upsert({
     where: { id: "service_cat_bath" },
     update: {
@@ -75,7 +103,7 @@ async function main() {
     }
   });
 
-  await prisma.service.upsert({
+  const dogBath = await prisma.service.upsert({
     where: { id: "service_small_dog_bath" },
     update: {
       name: "小型犬洗护",
@@ -100,7 +128,7 @@ async function main() {
     }
   });
 
-  await prisma.service.upsert({
+  const grooming = await prisma.service.upsert({
     where: { id: "service_pet_grooming" },
     update: {
       name: "宠物美容护理",
@@ -121,6 +149,31 @@ async function main() {
       durationMinutes: 120,
       description: "造型修剪、指甲护理和基础清洁。",
       notice: "实际服务时长会根据毛发情况调整。",
+      enabled: true
+    }
+  });
+
+  const catBoarding = await prisma.service.upsert({
+    where: { id: "service_cat_boarding" },
+    update: {
+      name: "猫咪寄养",
+      category: "宠物寄养",
+      basePrice: 88,
+      durationMinutes: 1440,
+      description: "猫咪单日寄养，含基础喂食和环境清洁。",
+      notice: "请携带常用猫粮和疫苗记录。",
+      enabled: true
+    },
+    create: {
+      id: "service_cat_boarding",
+      name: "猫咪寄养",
+      category: "宠物寄养",
+      petType: PetType.CAT,
+      sizeType: SizeType.UNKNOWN,
+      basePrice: 88,
+      durationMinutes: 1440,
+      description: "猫咪单日寄养，含基础喂食和环境清洁。",
+      notice: "请携带常用猫粮和疫苗记录。",
       enabled: true
     }
   });
@@ -146,12 +199,55 @@ async function main() {
     }
   });
 
+  const dog = await prisma.pet.upsert({
+    where: { id: "pet_xiaohuang_demo" },
+    update: {
+      name: "小黄",
+      breed: "泰迪",
+      notes: "胆小，剪指甲时需要安抚。"
+    },
+    create: {
+      id: "pet_xiaohuang_demo",
+      userId: dogCustomer.id,
+      name: "小黄",
+      type: PetType.DOG,
+      breed: "泰迪",
+      gender: PetGender.MALE,
+      age: 2,
+      weight: 5.6,
+      isNeutered: false,
+      notes: "胆小，剪指甲时需要安抚。"
+    }
+  });
+
+  const inactivePet = await prisma.pet.upsert({
+    where: { id: "pet_tuantuan_demo" },
+    update: {
+      name: "团团",
+      breed: "布偶",
+      notes: "皮肤敏感，建议低敏洗护。"
+    },
+    create: {
+      id: "pet_tuantuan_demo",
+      userId: inactiveCustomer.id,
+      name: "团团",
+      type: PetType.CAT,
+      breed: "布偶",
+      gender: PetGender.FEMALE,
+      age: 4,
+      weight: 5.1,
+      isNeutered: true,
+      notes: "皮肤敏感，建议低敏洗护。"
+    }
+  });
+
   const booking = await prisma.booking.upsert({
     where: { id: "booking_demo_confirmed" },
     update: {
-      bookingDate: utcDate("2026-06-21"),
-      startTime: storeDateTime("2026-06-21", "10:00"),
-      endTime: storeDateTime("2026-06-21", "11:30"),
+      bookingDate: utcDate("2026-06-27"),
+      startTime: storeDateTime("2026-06-27", "10:30"),
+      endTime: storeDateTime("2026-06-27", "12:00"),
+      status: BookingStatus.CONFIRMED,
       remark: "第一次到店，请温柔一些。"
     },
     create: {
@@ -159,41 +255,107 @@ async function main() {
       userId: customer.id,
       petId: pet.id,
       serviceId: catBath.id,
-      bookingDate: utcDate("2026-06-21"),
-      startTime: storeDateTime("2026-06-21", "10:00"),
-      endTime: storeDateTime("2026-06-21", "11:30"),
+      bookingDate: utcDate("2026-06-27"),
+      startTime: storeDateTime("2026-06-27", "10:30"),
+      endTime: storeDateTime("2026-06-27", "12:00"),
       status: BookingStatus.CONFIRMED,
       remark: "第一次到店，请温柔一些。"
     }
   });
 
-  const order = await prisma.order.upsert({
-    where: { bookingId: booking.id },
-    update: {},
+  const pendingBooking = await prisma.booking.upsert({
+    where: { id: "booking_demo_pending" },
+    update: {
+      bookingDate: utcDate("2026-06-27"),
+      startTime: storeDateTime("2026-06-27", "15:00"),
+      endTime: storeDateTime("2026-06-27", "16:30"),
+      status: BookingStatus.PENDING,
+      remark: "客户希望尽量安排安静区域。"
+    },
     create: {
-      id: "order_demo_paid",
-      bookingId: booking.id,
-      userId: customer.id,
-      totalAmount: 128,
-      paidAmount: 128,
-      payMethod: "STORE_PAY",
-      status: OrderStatus.PAID
+      id: "booking_demo_pending",
+      userId: dogCustomer.id,
+      petId: dog.id,
+      serviceId: grooming.id,
+      bookingDate: utcDate("2026-06-27"),
+      startTime: storeDateTime("2026-06-27", "15:00"),
+      endTime: storeDateTime("2026-06-27", "16:30"),
+      status: BookingStatus.PENDING,
+      remark: "客户希望尽量安排安静区域。"
     }
   });
+
+  const oldBooking = await prisma.booking.upsert({
+    where: { id: "booking_demo_old" },
+    update: {
+      bookingDate: utcDate("2026-03-20"),
+      startTime: storeDateTime("2026-03-20", "09:00"),
+      endTime: storeDateTime("2026-03-20", "10:30"),
+      status: BookingStatus.COMPLETED,
+      remark: "老客户历史消费，用于召回演示。"
+    },
+    create: {
+      id: "booking_demo_old",
+      userId: inactiveCustomer.id,
+      petId: inactivePet.id,
+      serviceId: catBath.id,
+      bookingDate: utcDate("2026-03-20"),
+      startTime: storeDateTime("2026-03-20", "09:00"),
+      endTime: storeDateTime("2026-03-20", "10:30"),
+      status: BookingStatus.COMPLETED,
+      remark: "老客户历史消费，用于召回演示。"
+    }
+  });
+
+  const order = await upsertOrder("order_demo_paid", booking.id, customer.id, 128, 128, "STORE_PAY", OrderStatus.PAID);
+  const dogOrder = await upsertOrder("order_demo_dog_paid", pendingBooking.id, dogCustomer.id, 198, 198, "MOCK_PAY", OrderStatus.PAID);
+  const oldOrder = await upsertOrder("order_demo_old_paid", oldBooking.id, inactiveCustomer.id, 128, 128, "MEMBER_BALANCE", OrderStatus.PAID);
 
   await prisma.membership.upsert({
     where: { userId: customer.id },
     update: {
       level: "黄金会员",
       balance: 300,
-      points: 128
+      points: 328
     },
     create: {
       id: "membership_customer_demo",
       userId: customer.id,
       level: "黄金会员",
       balance: 300,
-      points: 128
+      points: 328
+    }
+  });
+
+  await prisma.membership.upsert({
+    where: { userId: dogCustomer.id },
+    update: {
+      level: "白银会员",
+      balance: 120,
+      points: 98
+    },
+    create: {
+      id: "membership_dog_customer_demo",
+      userId: dogCustomer.id,
+      level: "白银会员",
+      balance: 120,
+      points: 98
+    }
+  });
+
+  await prisma.membership.upsert({
+    where: { userId: inactiveCustomer.id },
+    update: {
+      level: "普通会员",
+      balance: 20,
+      points: 58
+    },
+    create: {
+      id: "membership_inactive_customer_demo",
+      userId: inactiveCustomer.id,
+      level: "普通会员",
+      balance: 20,
+      points: 58
     }
   });
 
@@ -214,53 +376,140 @@ async function main() {
     }
   });
 
-  await prisma.consumptionRecord.upsert({
-    where: { id: "consumption_demo_order_paid" },
-    update: {},
+  await prisma.packageCard.upsert({
+    where: { id: "package_card_dog_bath_demo" },
+    update: {
+      remainingTimes: 8,
+      status: PackageCardStatus.ACTIVE
+    },
     create: {
-      id: "consumption_demo_order_paid",
-      userId: customer.id,
-      orderId: order.id,
-      amount: 128,
-      type: "到店支付",
-      description: "猫咪洗护消费"
+      id: "package_card_dog_bath_demo",
+      userId: dogCustomer.id,
+      serviceId: dogBath.id,
+      totalTimes: 10,
+      remainingTimes: 8,
+      expireDate: utcDate("2027-03-01"),
+      status: PackageCardStatus.ACTIVE
     }
   });
 
-  await prisma.knowledgeBase.upsert({
-    where: { id: "kb_booking_rules_demo" },
+  await upsertConsumption("consumption_demo_order_paid", customer.id, order.id, 128, "ORDER_PAYMENT", "猫咪洗护到店支付");
+  await upsertConsumption("consumption_demo_dog_paid", dogCustomer.id, dogOrder.id, 198, "ORDER_PAYMENT", "宠物美容护理模拟支付");
+  await upsertConsumption("consumption_demo_old_paid", inactiveCustomer.id, oldOrder.id, 128, "MEMBER_BALANCE_PAYMENT", "猫咪洗护会员余额支付");
+
+  await upsertKnowledge("kb_booking_rules_demo", "预约规则", "请至少提前两小时预约。如需临时加急，请联系门店工作人员。", "预约");
+  await upsertKnowledge("kb_cat_notice_demo", "猫咪洗护注意事项", "猫咪害怕吹风或容易应激时，请提前备注，门店会安排更温柔的吹干方式。", "护理");
+  await upsertKnowledge("kb_boarding_notice_demo", "寄养准备", "寄养请携带常用粮、疫苗记录和熟悉的小毯子，帮助宠物更快适应环境。", "寄养");
+
+  await upsertFollowUp("follow_up_demo", customer.id, "回访咪咪首次洗护体验", "询问咪咪洗护后状态是否稳定。", "待跟进", "2026-06-28");
+  await upsertFollowUp("follow_up_inactive_demo", inactiveCustomer.id, "召回团团主人", "团团已经超过 90 天未到店，建议发送低敏洗护召回文案。", "pending", "2026-06-29");
+
+  await prisma.aiConversation.createMany({
+    data: [
+      {
+        userId: customer.id,
+        channel: "miniapp",
+        role: "user",
+        content: "猫咪洗护多少钱，明天下午还有位置吗？"
+      },
+      {
+        userId: customer.id,
+        channel: "miniapp",
+        role: "assistant",
+        content: "猫咪洗护 ¥128，约 90 分钟。明天下午可选 13:30-15:00、15:00-16:30。"
+      }
+    ],
+    skipDuplicates: true
+  });
+
+  console.log(`已写入演示数据：管理员 ${admin.phone}，客户 ${customer.phone} / ${dogCustomer.phone} / ${inactiveCustomer.phone}。`);
+}
+
+async function upsertOrder(
+  id: string,
+  bookingId: string,
+  userId: string,
+  totalAmount: number,
+  paidAmount: number,
+  payMethod: string,
+  status: OrderStatus
+) {
+  return prisma.order.upsert({
+    where: { bookingId },
     update: {
-      title: "预约规则",
-      content: "请至少提前两小时预约。如需临时加急，请联系门店工作人员。",
-      category: "预约"
+      totalAmount,
+      paidAmount,
+      payMethod,
+      status
     },
     create: {
-      id: "kb_booking_rules_demo",
-      title: "预约规则",
-      content: "请至少提前两小时预约。如需临时加急，请联系门店工作人员。",
-      category: "预约",
+      id,
+      bookingId,
+      userId,
+      totalAmount,
+      paidAmount,
+      payMethod,
+      status
+    }
+  });
+}
+
+async function upsertConsumption(id: string, userId: string, orderId: string, amount: number, type: string, description: string) {
+  await prisma.consumptionRecord.upsert({
+    where: { id },
+    update: {
+      amount,
+      type,
+      description
+    },
+    create: {
+      id,
+      userId,
+      orderId,
+      amount,
+      type,
+      description
+    }
+  });
+}
+
+async function upsertKnowledge(id: string, title: string, content: string, category: string) {
+  await prisma.knowledgeBase.upsert({
+    where: { id },
+    update: {
+      title,
+      content,
+      category,
+      enabled: true
+    },
+    create: {
+      id,
+      title,
+      content,
+      category,
       enabled: true
     }
   });
+}
 
+async function upsertFollowUp(id: string, userId: string, title: string, content: string, status: string, dueDate: string) {
   await prisma.followUpTask.upsert({
-    where: { id: "follow_up_demo" },
+    where: { id },
     update: {
-      title: "回访咪咪首次洗护体验",
-      content: "询问咪咪洗护后状态是否稳定。",
-      status: "待跟进"
+      title,
+      content,
+      status,
+      dueDate: utcDate(dueDate)
     },
     create: {
-      id: "follow_up_demo",
-      userId: customer.id,
-      title: "回访咪咪首次洗护体验",
-      content: "询问咪咪洗护后状态是否稳定。",
-      status: "待跟进",
-      dueDate: utcDate("2026-06-24")
+      id,
+      userId,
+      title,
+      content,
+      status,
+      dueDate: utcDate(dueDate)
     }
   });
-
-  console.log(`已写入演示数据：管理员 ${admin.phone}，客户 ${customer.phone}。`);
 }
 
 main()

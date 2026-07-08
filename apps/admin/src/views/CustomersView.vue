@@ -28,6 +28,11 @@
       <el-table-column label="套餐卡" width="100">
         <template #default="{ row }">{{ row.packageCards?.length ?? 0 }}</template>
       </el-table-column>
+      <el-table-column label="客户标签" min-width="220">
+        <template #default="{ row }">
+          <el-tag v-for="tag in customerTags(row)" :key="tag" class="tag-item" size="small">{{ tag }}</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="创建时间" width="160">
         <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
       </el-table-column>
@@ -63,5 +68,37 @@ async function load() {
   }
 }
 
+function customerTags(user: User) {
+  const tags: string[] = [];
+  const balance = user.membership?.balance ?? 0;
+  const points = user.membership?.points ?? 0;
+  const petTypes = new Set(user.pets?.map((pet) => pet.type) ?? []);
+
+  if (balance >= 200 || points >= 300) {
+    tags.push("高价值客户");
+  }
+  if ((user.packageCards?.length ?? 0) > 0) {
+    tags.push("套餐卡客户");
+  }
+  if (petTypes.has("CAT")) {
+    tags.push("猫咪客户");
+  }
+  if (petTypes.has("DOG")) {
+    tags.push("狗狗客户");
+  }
+  if (tags.length === 0) {
+    tags.push("普通客户");
+  }
+
+  return tags;
+}
+
 onMounted(load);
 </script>
+
+<style scoped>
+.tag-item {
+  margin-right: 6px;
+  margin-bottom: 4px;
+}
+</style>

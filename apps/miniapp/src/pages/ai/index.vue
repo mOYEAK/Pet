@@ -32,7 +32,14 @@ interface ChatMessage {
   content: string;
 }
 
-const quickQuestions = ["猫咪洗护多少钱？", "明天下午还有位置吗？", "第一次到店要注意什么？"];
+const quickQuestions = [
+  "猫咪洗护多少钱？",
+  "明天下午还有位置吗？",
+  "第一次到店要注意什么？",
+  "门店营业时间和地址是什么？",
+  "套餐卡怎么使用？",
+  "最近有什么活动？"
+];
 const currentUser = ref<User | null>(null);
 const input = ref("");
 const loading = ref(false);

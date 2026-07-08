@@ -28,6 +28,26 @@
 
     <view class="card">
       <view class="section-header">
+        <text class="card-title">我的套餐卡</text>
+        <text class="link" @click="load">刷新</text>
+      </view>
+      <view v-if="packageCards.length === 0" class="muted">暂无套餐卡。</view>
+      <view v-else class="package-list">
+        <view v-for="card in packageCards" :key="card.id" class="package-item">
+          <view>
+            <text class="record-title">{{ card.service?.name ?? card.serviceId }}</text>
+            <text class="muted">有效期：{{ formatDate(card.expireDate) }}</text>
+          </view>
+          <view class="record-right">
+            <text class="record-amount">{{ card.remainingTimes }}/{{ card.totalTimes }} 次</text>
+            <text class="muted">{{ packageCardStatusText[card.status] ?? card.status }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-header">
         <text class="card-title">消费记录</text>
         <text class="link" @click="load">刷新</text>
       </view>
@@ -51,26 +71,30 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import PageNav from "../../components/PageNav.vue";
-import { api, getCurrentUser, type ConsumptionRecord, type Membership } from "../../api/client";
-import { formatDateTime, formatMoney } from "../../utils/format";
-import { consumptionTypeText } from "../../utils/status";
+import { api, getCurrentUser, type ConsumptionRecord, type Membership, type PackageCard } from "../../api/client";
+import { formatDate, formatDateTime, formatMoney } from "../../utils/format";
+import { consumptionTypeText, packageCardStatusText } from "../../utils/status";
 
 const membership = ref<Membership | null>(null);
 const records = ref<ConsumptionRecord[]>([]);
+const packageCards = ref<PackageCard[]>([]);
 const loading = ref(false);
 
 async function load() {
   loading.value = true;
   try {
     const user = await getCurrentUser();
-    const [membershipInfo, consumptionRecords] = await Promise.all([
+    const [membershipInfo, cardList, consumptionRecords] = await Promise.all([
       api.membership(user.id),
+      api.packageCards(user.id),
       api.consumptionRecords(user.id)
     ]);
     membership.value = membershipInfo;
+    packageCards.value = cardList;
     records.value = consumptionRecords;
   } catch (error) {
     membership.value = null;
+    packageCards.value = [];
     records.value = [];
     uni.showToast({
       title: error instanceof Error ? error.message : "会员信息加载失败",
@@ -94,6 +118,8 @@ onMounted(load);
 .card,
 .member-card,
 .stat,
+.package-list,
+.package-item,
 .record-list,
 .record-item,
 .record-right {
@@ -160,9 +186,14 @@ onMounted(load);
   gap: 12px;
 }
 
-.record-item {
+.record-item,
+.package-item {
   padding-top: 12px;
   border-top: 1px solid #e5e7eb;
+}
+
+.package-list {
+  gap: 12px;
 }
 
 .record-right {

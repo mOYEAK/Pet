@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+.cache
+.turbo
+.output
+coverage
+*.log
+.env
+.env.local
+.env.*.local
+README.local.md

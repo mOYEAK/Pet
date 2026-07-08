@@ -77,6 +77,26 @@ export interface ConsumptionRecord {
   createdAt: string;
 }
 
+export interface PackageCard {
+  id: string;
+  userId: string;
+  serviceId: string;
+  totalTimes: number;
+  remainingTimes: number;
+  expireDate: string | null;
+  status: string;
+  service?: ServiceItem;
+}
+
+export interface StoreSettings {
+  name: string;
+  businessHours: string;
+  address: string;
+  phone: string;
+  appointmentSlots: string[];
+  notice: string;
+}
+
 export interface AiCustomerServiceResponse {
   answer: string;
   availableSlots: Array<{
@@ -114,11 +134,11 @@ interface LoginResult {
   user: User;
 }
 
-function request<T>(path: string, method: "GET" | "POST" = "GET", data?: object): Promise<T> {
+function request<T>(path: string, method: "GET" | "POST" | "PATCH" = "GET", data?: object): Promise<T> {
   return new Promise((resolve, reject) => {
     uni.request({
       url: `${API_BASE}${path}`,
-      method,
+      method: method as UniApp.RequestOptions["method"],
       data,
       header: {
         "Content-Type": "application/json"
@@ -159,9 +179,12 @@ export const api = {
   createPet: (payload: CreatePetPayload) => request<Pet>("/pets", "POST", payload),
   bookings: (userId: string) => request<Booking[]>(`/bookings?userId=${encodeURIComponent(userId)}`),
   createBooking: (payload: CreateBookingPayload) => request<Booking>("/bookings", "POST", payload),
+  cancelBooking: (id: string) => request<Booking>(`/bookings/${id}/cancel`, "PATCH"),
   membership: (userId: string) => request<Membership>(`/memberships/by-user/${encodeURIComponent(userId)}`),
+  packageCards: (userId: string) => request<PackageCard[]>(`/memberships/package-cards?userId=${encodeURIComponent(userId)}`),
   consumptionRecords: (userId: string) =>
     request<ConsumptionRecord[]>(`/memberships/consumption-records?userId=${encodeURIComponent(userId)}`),
+  storeSettings: () => request<StoreSettings>("/settings/store"),
   askCustomerService: (payload: { userId?: string; message: string }) =>
     request<AiCustomerServiceResponse>("/ai/customer-service", "POST", payload)
 };

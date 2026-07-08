@@ -21,6 +21,9 @@
             <el-descriptions-item label="手机号">{{ fallback(customer.phone) }}</el-descriptions-item>
             <el-descriptions-item label="角色">{{ customer.role === "ADMIN" ? "管理员" : "客户" }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ formatDateTime(customer.createdAt) }}</el-descriptions-item>
+            <el-descriptions-item label="客户标签" :span="2">
+              <el-tag v-for="tag in customerTags(customer)" :key="tag" class="tag-item" size="small">{{ tag }}</el-tag>
+            </el-descriptions-item>
           </el-descriptions>
         </el-card>
 
@@ -153,6 +156,32 @@ async function load() {
   }
 }
 
+function customerTags(user: User) {
+  const tags: string[] = [];
+  const balance = user.membership?.balance ?? 0;
+  const points = user.membership?.points ?? 0;
+  const petTypes = new Set(user.pets?.map((pet) => pet.type) ?? []);
+  const paidOrders = user.orders?.filter((order) => order.status === "PAID" || order.status === "COMPLETED").length ?? 0;
+
+  if (balance >= 200 || points >= 300 || paidOrders >= 2) {
+    tags.push("高价值客户");
+  }
+  if ((user.packageCards?.length ?? 0) > 0) {
+    tags.push("套餐卡客户");
+  }
+  if (petTypes.has("CAT")) {
+    tags.push("猫咪客户");
+  }
+  if (petTypes.has("DOG")) {
+    tags.push("狗狗客户");
+  }
+  if (tags.length === 0) {
+    tags.push("普通客户");
+  }
+
+  return tags;
+}
+
 onMounted(load);
 </script>
 
@@ -165,6 +194,10 @@ onMounted(load);
 
 .section-card {
   margin-top: 16px;
+}
+
+.tag-item {
+  margin-right: 6px;
 }
 
 @media (max-width: 900px) {

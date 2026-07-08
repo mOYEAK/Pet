@@ -17,6 +17,20 @@
       <button class="plain-button" @click="goPets">宠物档案</button>
     </view>
 
+    <view v-if="settings" class="section store-section">
+      <text class="section-title">{{ settings.name }}</text>
+      <text class="muted">营业时间：{{ settings.businessHours }}</text>
+      <text class="muted">电话：{{ settings.phone }}</text>
+      <text class="muted">地址：{{ settings.address }}</text>
+      <text class="notice">{{ settings.notice }}</text>
+    </view>
+
+    <view class="campaign-card" @click="goServices">
+      <text class="campaign-title">周末洗护活动</text>
+      <text class="campaign-desc">老客户护理服务满 128 减 20，套餐卡客户可优先预约空闲时段。</text>
+      <text class="campaign-link">去预约</text>
+    </view>
+
     <view class="section">
       <view class="section-header">
         <text class="section-title">推荐服务</text>
@@ -40,11 +54,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import PageNav from "../../components/PageNav.vue";
-import { api, getCurrentUser, type ServiceItem, type User } from "../../api/client";
+import { api, getCurrentUser, type ServiceItem, type StoreSettings, type User } from "../../api/client";
 import { formatMoney } from "../../utils/format";
 
 const user = ref<User | null>(null);
 const services = ref<ServiceItem[]>([]);
+const settings = ref<StoreSettings | null>(null);
 const loading = ref(false);
 
 function goServices() {
@@ -58,9 +73,10 @@ function goPets() {
 async function load() {
   loading.value = true;
   try {
-    const [currentUser, serviceList] = await Promise.all([getCurrentUser(), api.services()]);
+    const [currentUser, serviceList, storeSettings] = await Promise.all([getCurrentUser(), api.services(), api.storeSettings()]);
     user.value = currentUser;
     services.value = serviceList.filter((service) => service.enabled);
+    settings.value = storeSettings;
   } catch (error) {
     uni.showToast({
       title: error instanceof Error ? error.message : "首页加载失败",
@@ -148,6 +164,42 @@ onMounted(load);
   padding: 16px;
   border-radius: 10px;
   background: #ffffff;
+}
+
+.store-section {
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.notice {
+  color: #1d4ed8;
+  line-height: 1.5;
+}
+
+.campaign-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 10px;
+  color: #ffffff;
+  background: #0f172a;
+}
+
+.campaign-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.campaign-desc {
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.campaign-link {
+  font-weight: 700;
+  color: #93c5fd;
 }
 
 .section-header,

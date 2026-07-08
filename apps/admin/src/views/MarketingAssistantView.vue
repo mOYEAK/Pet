@@ -37,6 +37,10 @@
         <el-skeleton v-if="loading" :rows="6" animated />
         <template v-else>
           <pre class="copy">{{ copy || "填写活动主题后生成营销文案。" }}</pre>
+          <div v-if="copy" class="coupon-draft">
+            <h3>优惠活动草案</h3>
+            <p>{{ couponDraft }}</p>
+          </div>
           <div v-if="slots.length" class="slots">
             <span>引用空闲时段</span>
             <el-tag v-for="slot in slots" :key="`${slot.date}-${slot.startTime}`">{{ slot.date }} {{ slot.startTime }}-{{ slot.endTime }}</el-tag>
@@ -60,6 +64,8 @@ const form = reactive({
   channel: "朋友圈",
   tone: "亲切"
 });
+
+const couponDraft = "老客户到店可享护理类服务满 128 减 20，套餐卡客户可优先预约空闲时段；本草案仅用于营销展示，不参与真实核销。";
 
 async function generate() {
   if (!form.topic.trim()) {
@@ -103,6 +109,25 @@ onMounted(generate);
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 16px;
+}
+
+.coupon-draft {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+}
+
+.coupon-draft h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.coupon-draft p {
+  margin: 0;
+  color: #1e3a8a;
+  line-height: 1.6;
 }
 
 .slots span {
