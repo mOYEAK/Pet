@@ -6,15 +6,16 @@
       <text class="title">宠伴管家</text>
       <text class="subtitle">在线查看服务、管理宠物档案、提交预约并查看会员余额。</text>
       <view class="user-card">
-        <text class="muted">当前用户</text>
+        <text class="muted light">当前用户</text>
         <text class="user-name">{{ user?.nickname || "加载中" }}</text>
-        <text class="muted">{{ user?.phone || "模拟登录中" }}</text>
+        <text class="muted light">{{ user?.phone || "模拟登录中" }}</text>
       </view>
     </view>
 
     <view class="quick-grid">
       <button class="primary-button" @click="goServices">预约服务</button>
       <button class="plain-button" @click="goPets">宠物档案</button>
+      <button class="plain-button" @click="goAi">智能客服</button>
     </view>
 
     <view v-if="settings" class="section store-section">
@@ -68,6 +69,10 @@ function goServices() {
 
 function goPets() {
   uni.switchTab({ url: "/pages/pets/index" });
+}
+
+function goAi() {
+  uni.navigateTo({ url: "/pages/ai/index" });
 }
 
 async function load() {
@@ -138,7 +143,7 @@ onMounted(load);
 
 .quick-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 16px 0;
 }
@@ -167,6 +172,8 @@ onMounted(load);
 }
 
 .store-section {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -236,5 +243,15 @@ onMounted(load);
 .empty {
   color: #64748b;
   font-size: 13px;
+}
+
+.light {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+@media (max-width: 420px) {
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
