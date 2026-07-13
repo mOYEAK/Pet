@@ -48,6 +48,26 @@
 
     <view class="card">
       <view class="section-header">
+        <text class="card-title">我的优惠券</text>
+        <text class="link" @click="load">刷新</text>
+      </view>
+      <view v-if="userCoupons.length === 0" class="muted">暂无优惠券。</view>
+      <view v-else class="coupon-list">
+        <view v-for="coupon in userCoupons" :key="coupon.id" class="coupon-item">
+          <view>
+            <text class="record-title">{{ coupon.template?.name ?? coupon.templateId }}</text>
+            <text class="muted">有效期：{{ formatDate(coupon.template?.startDate) }} 至 {{ formatDate(coupon.template?.endDate) }}</text>
+          </view>
+          <view class="record-right">
+            <text class="record-amount">满 {{ formatMoney(coupon.template?.thresholdAmount) }} 减 {{ formatMoney(coupon.template?.discountAmount) }}</text>
+            <text class="muted">{{ userCouponStatusText[coupon.status] ?? coupon.status }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-header">
         <text class="card-title">消费记录</text>
         <text class="link" @click="load">刷新</text>
       </view>
@@ -71,30 +91,34 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import PageNav from "../../components/PageNav.vue";
-import { api, getCurrentUser, type ConsumptionRecord, type Membership, type PackageCard } from "../../api/client";
+import { api, getCurrentUser, type ConsumptionRecord, type Membership, type PackageCard, type UserCoupon } from "../../api/client";
 import { formatDate, formatDateTime, formatMoney } from "../../utils/format";
-import { consumptionTypeText, packageCardStatusText } from "../../utils/status";
+import { consumptionTypeText, packageCardStatusText, userCouponStatusText } from "../../utils/status";
 
 const membership = ref<Membership | null>(null);
 const records = ref<ConsumptionRecord[]>([]);
 const packageCards = ref<PackageCard[]>([]);
+const userCoupons = ref<UserCoupon[]>([]);
 const loading = ref(false);
 
 async function load() {
   loading.value = true;
   try {
     const user = await getCurrentUser();
-    const [membershipInfo, cardList, consumptionRecords] = await Promise.all([
+    const [membershipInfo, cardList, couponList, consumptionRecords] = await Promise.all([
       api.membership(user.id),
       api.packageCards(user.id),
+      api.userCoupons(user.id),
       api.consumptionRecords(user.id)
     ]);
     membership.value = membershipInfo;
     packageCards.value = cardList;
+    userCoupons.value = couponList;
     records.value = consumptionRecords;
   } catch (error) {
     membership.value = null;
     packageCards.value = [];
+    userCoupons.value = [];
     records.value = [];
     uni.showToast({
       title: error instanceof Error ? error.message : "会员信息加载失败",
@@ -120,6 +144,8 @@ onMounted(load);
 .stat,
 .package-list,
 .package-item,
+.coupon-list,
+.coupon-item,
 .record-list,
 .record-item,
 .record-right {
@@ -187,12 +213,14 @@ onMounted(load);
 }
 
 .record-item,
-.package-item {
+.package-item,
+.coupon-item {
   padding-top: 12px;
   border-top: 1px solid #e5e7eb;
 }
 
-.package-list {
+.package-list,
+.coupon-list {
   gap: 12px;
 }
 

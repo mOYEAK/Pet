@@ -1,12 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { BookingStatus, Prisma } from "@prisma/client";
+import { BookingStatus, NotificationType, Prisma } from "@prisma/client";
 import { serializeEntity } from "../../common/serialize";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateBookingDto, ListBookingsQueryDto } from "./dto";
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService
+  ) {}
 
   async list(query: ListBookingsQueryDto) {
     const where: Prisma.BookingWhereInput = {
@@ -95,11 +99,20 @@ export class BookingsService {
       }
     });
 
+    await this.createNotificationSafely({
+      userId: booking.userId,
+      title: "预约已提交",
+      content: `${booking.service.name} 预约已提交，门店确认后会更新状态。`,
+      type: NotificationType.BOOKING_CREATED,
+      relatedType: "booking",
+      relatedId: booking.id
+    });
+
     return serializeEntity(booking);
   }
 
   async updateStatus(id: string, status: BookingStatus) {
-    await this.ensureExists(id);
+    const existing = await this.ensureExists(id);
 
     const booking = await this.prisma.booking.update({
       where: { id },
@@ -111,6 +124,18 @@ export class BookingsService {
         order: true
       }
     });
+
+    if (existing.status !== booking.status) {
+      const notification = this.resolveStatusNotification(booking);
+      if (notification) {
+        await this.createNotificationSafely({
+          userId: booking.userId,
+          ...notification,
+          relatedType: "booking",
+          relatedId: booking.id
+        });
+      }
+    }
 
     return serializeEntity(booking);
   }
@@ -135,10 +160,40 @@ export class BookingsService {
   }
 
   private async ensureExists(id: string) {
-    const count = await this.prisma.booking.count({ where: { id } });
+    const booking = await this.prisma.booking.findUnique({ where: { id } });
 
-    if (count === 0) {
+    if (!booking) {
       throw new NotFoundException("预约不存在");
+    }
+
+    return booking;
+  }
+
+  private resolveStatusNotification(booking: { status: BookingStatus; service?: { name: string } }) {
+    if (booking.status === BookingStatus.CONFIRMED) {
+      return {
+        title: "预约已确认",
+        content: `${booking.service?.name ?? "服务"} 预约已确认，请按时到店。`,
+        type: NotificationType.BOOKING_CONFIRMED
+      };
+    }
+
+    if (booking.status === BookingStatus.CANCELLED) {
+      return {
+        title: "预约已取消",
+        content: `${booking.service?.name ?? "服务"} 预约已取消，如需服务可重新预约。`,
+        type: NotificationType.BOOKING_CANCELLED
+      };
+    }
+
+    return null;
+  }
+
+  private async createNotificationSafely(input: Parameters<NotificationsService["create"]>[0]) {
+    try {
+      await this.notificationsService.create(input);
+    } catch (error) {
+      console.warn("通知创建失败", error);
     }
   }
 

@@ -44,6 +44,8 @@
           <text class="muted">
             订单：{{ booking.order ? orderStatusText[booking.order.status] ?? booking.order.status : "待门店生成" }}
           </text>
+          <text v-if="booking.order?.discountAmount" class="muted">优惠：-{{ formatMoney(booking.order.discountAmount) }}</text>
+          <text v-if="booking.order" class="muted">实付：{{ formatMoney(booking.order.paidAmount || booking.order.totalAmount) }}</text>
           <text v-if="booking.order?.payMethod" class="muted">支付方式：{{ payMethodText[booking.order.payMethod] ?? booking.order.payMethod }}</text>
           <text class="notes">{{ booking.remark || "暂无备注" }}</text>
           <button v-if="canCancel(booking)" class="cancel-button" @click="cancelBooking(booking.id)">取消预约</button>

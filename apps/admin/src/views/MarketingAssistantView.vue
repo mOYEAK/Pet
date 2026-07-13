@@ -40,6 +40,7 @@
           <div v-if="copy" class="coupon-draft">
             <h3>优惠活动草案</h3>
             <p>{{ couponDraft }}</p>
+            <el-button type="primary" size="small" :loading="creatingCoupon" @click="createCouponTemplate">创建满减券模板</el-button>
           </div>
           <div v-if="slots.length" class="slots">
             <span>引用空闲时段</span>
@@ -57,6 +58,7 @@ import { onMounted, reactive, ref } from "vue";
 import { api, type MarketingCopyResponse } from "../api/client";
 
 const loading = ref(false);
+const creatingCoupon = ref(false);
 const copy = ref("");
 const slots = ref<MarketingCopyResponse["availableSlots"]>([]);
 const form = reactive({
@@ -65,7 +67,7 @@ const form = reactive({
   tone: "亲切"
 });
 
-const couponDraft = "老客户到店可享护理类服务满 128 减 20，套餐卡客户可优先预约空闲时段；本草案仅用于营销展示，不参与真实核销。";
+const couponDraft = "老客户到店可享护理类服务满 128 减 20，套餐卡客户可优先预约空闲时段；可一键创建为后台满减券模板。";
 
 async function generate() {
   if (!form.topic.trim()) {
@@ -82,6 +84,24 @@ async function generate() {
     ElMessage.error(error instanceof Error ? error.message : "营销文案生成失败");
   } finally {
     loading.value = false;
+  }
+}
+
+async function createCouponTemplate() {
+  creatingCoupon.value = true;
+  try {
+    await api.createCouponTemplate({
+      name: `${form.topic}满减券`,
+      thresholdAmount: 128,
+      discountAmount: 20,
+      description: "由营销文案草案创建：老客户到店护理类服务满 128 减 20。",
+      enabled: true
+    });
+    ElMessage.success("满减券模板已创建，可在优惠券管理中发放给客户");
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "优惠券模板创建失败");
+  } finally {
+    creatingCoupon.value = false;
   }
 }
 

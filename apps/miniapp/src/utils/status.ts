@@ -33,6 +33,20 @@ export const packageCardStatusText: Record<string, string> = {
   DISABLED: "已停用"
 };
 
+export const userCouponStatusText: Record<string, string> = {
+  UNUSED: "未使用",
+  USED: "已使用",
+  EXPIRED: "已过期",
+  DISABLED: "已停用"
+};
+
+export const notificationTypeText: Record<string, string> = {
+  BOOKING_CREATED: "预约提交",
+  BOOKING_CONFIRMED: "预约确认",
+  BOOKING_CANCELLED: "预约取消",
+  ORDER_PAID: "订单支付"
+};
+
 export const petTypeText: Record<string, string> = {
   CAT: "猫咪",
   DOG: "狗狗",

@@ -11,6 +11,8 @@
         <el-menu-item index="/pets">宠物档案</el-menu-item>
         <el-menu-item index="/orders">订单管理</el-menu-item>
         <el-menu-item index="/memberships">会员管理</el-menu-item>
+        <el-menu-item index="/coupons">优惠券管理</el-menu-item>
+        <el-menu-item index="/notifications">通知记录</el-menu-item>
         <el-menu-item index="/knowledge-base">知识库</el-menu-item>
         <el-menu-item index="/ai-assistant">AI 经营助手</el-menu-item>
         <el-menu-item index="/marketing-assistant">营销文案</el-menu-item>

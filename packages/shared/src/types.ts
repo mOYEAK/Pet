@@ -1,10 +1,12 @@
 import type {
   BookingStatus,
+  NotificationType,
   OrderStatus,
   PackageCardStatus,
   PetGender,
   PetType,
   SizeType,
+  UserCouponStatus,
   UserRole
 } from "./enums";
 
@@ -59,9 +61,42 @@ export interface OrderDto {
   bookingId: string;
   userId: string;
   totalAmount: number;
+  discountAmount: number;
   paidAmount: number;
   payMethod?: string;
+  couponId?: string;
   status: OrderStatus;
+}
+
+export interface CouponTemplateDto {
+  id: string;
+  name: string;
+  thresholdAmount: number;
+  discountAmount: number;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+  enabled: boolean;
+}
+
+export interface UserCouponDto {
+  id: string;
+  templateId: string;
+  userId: string;
+  status: UserCouponStatus;
+  usedAt?: string;
+}
+
+export interface NotificationDto {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  type: NotificationType;
+  relatedType?: string;
+  relatedId?: string;
+  readAt?: string;
+  createdAt: string;
 }
 
 export interface MembershipDto {

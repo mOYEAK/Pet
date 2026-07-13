@@ -35,6 +35,12 @@
       "style": {
         "navigationBarTitleText": "智能客服"
       }
+    },
+    {
+      "path": "pages/notifications/index",
+      "style": {
+        "navigationBarTitleText": "通知中心"
+      }
     }
   ],
   "globalStyle": {

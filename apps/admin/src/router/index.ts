@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import AiAssistantView from "../views/AiAssistantView.vue";
 import BookingsView from "../views/BookingsView.vue";
+import CouponsView from "../views/CouponsView.vue";
 import CustomerDetailView from "../views/CustomerDetailView.vue";
 import CustomersView from "../views/CustomersView.vue";
 import DashboardView from "../views/DashboardView.vue";
@@ -9,6 +10,7 @@ import KnowledgeBaseView from "../views/KnowledgeBaseView.vue";
 import LoginView from "../views/LoginView.vue";
 import MarketingAssistantView from "../views/MarketingAssistantView.vue";
 import MembershipsView from "../views/MembershipsView.vue";
+import NotificationsView from "../views/NotificationsView.vue";
 import OrdersView from "../views/OrdersView.vue";
 import PetsView from "../views/PetsView.vue";
 import ServicesView from "../views/ServicesView.vue";
@@ -26,6 +28,8 @@ export const router = createRouter({
     { path: "/pets", name: "pets", component: PetsView },
     { path: "/orders", name: "orders", component: OrdersView },
     { path: "/memberships", name: "memberships", component: MembershipsView },
+    { path: "/coupons", name: "coupons", component: CouponsView },
+    { path: "/notifications", name: "notifications", component: NotificationsView },
     { path: "/knowledge-base", name: "knowledge-base", component: KnowledgeBaseView },
     { path: "/ai-assistant", name: "ai-assistant", component: AiAssistantView },
     { path: "/marketing-assistant", name: "marketing-assistant", component: MarketingAssistantView },

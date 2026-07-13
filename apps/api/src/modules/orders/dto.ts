@@ -23,6 +23,10 @@ export class PayOrderDto {
 
   @IsOptional()
   @IsString()
+  couponId?: string;
+
+  @IsOptional()
+  @IsString()
   packageCardId?: string;
 
   @IsOptional()

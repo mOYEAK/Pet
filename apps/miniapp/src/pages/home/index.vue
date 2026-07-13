@@ -16,6 +16,7 @@
       <button class="primary-button" @click="goServices">预约服务</button>
       <button class="plain-button" @click="goPets">宠物档案</button>
       <button class="plain-button" @click="goAi">智能客服</button>
+      <button class="plain-button" @click="goNotifications">通知{{ unreadCount > 0 ? `(${unreadCount})` : "" }}</button>
     </view>
 
     <view v-if="settings" class="section store-section">
@@ -61,6 +62,7 @@ import { formatMoney } from "../../utils/format";
 const user = ref<User | null>(null);
 const services = ref<ServiceItem[]>([]);
 const settings = ref<StoreSettings | null>(null);
+const unreadCount = ref(0);
 const loading = ref(false);
 
 function goServices() {
@@ -75,6 +77,10 @@ function goAi() {
   uni.navigateTo({ url: "/pages/ai/index" });
 }
 
+function goNotifications() {
+  uni.navigateTo({ url: "/pages/notifications/index" });
+}
+
 async function load() {
   loading.value = true;
   try {
@@ -82,6 +88,8 @@ async function load() {
     user.value = currentUser;
     services.value = serviceList.filter((service) => service.enabled);
     settings.value = storeSettings;
+    const unread = await api.unreadNotifications(currentUser.id);
+    unreadCount.value = unread.count;
   } catch (error) {
     uni.showToast({
       title: error instanceof Error ? error.message : "首页加载失败",
@@ -143,9 +151,15 @@ onMounted(load);
 
 .quick-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin: 16px 0;
+}
+
+@media (max-width: 620px) {
+  .quick-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .primary-button,

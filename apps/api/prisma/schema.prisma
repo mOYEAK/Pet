@@ -53,6 +53,20 @@ enum PackageCardStatus {
   DISABLED
 }
 
+enum UserCouponStatus {
+  UNUSED
+  USED
+  EXPIRED
+  DISABLED
+}
+
+enum NotificationType {
+  BOOKING_CREATED
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  ORDER_PAID
+}
+
 model User {
   id                 String              @id @default(cuid())
   nickname           String?
@@ -64,9 +78,11 @@ model User {
   orders             Order[]
   membership         Membership?
   packageCards       PackageCard[]
+  userCoupons        UserCoupon[]
   consumptionRecords ConsumptionRecord[]
   followUpTasks      FollowUpTask[]
   aiConversations    AiConversation[]
+  notifications      Notification[]
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
 
@@ -139,12 +155,15 @@ model Order {
   id                 String              @id @default(cuid())
   bookingId          String              @unique @map("booking_id")
   userId             String              @map("user_id")
+  couponId           String?             @unique @map("coupon_id")
   totalAmount        Decimal             @map("total_amount") @db.Decimal(10, 2)
+  discountAmount     Decimal             @default(0) @map("discount_amount") @db.Decimal(10, 2)
   paidAmount         Decimal             @default(0) @map("paid_amount") @db.Decimal(10, 2)
   payMethod          String?             @map("pay_method")
   status             OrderStatus         @default(PENDING_PAYMENT)
   booking            Booking             @relation(fields: [bookingId], references: [id])
   user               User                @relation(fields: [userId], references: [id])
+  coupon             UserCoupon?         @relation("OrderCoupon", fields: [couponId], references: [id])
   consumptionRecords ConsumptionRecord[]
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
@@ -152,6 +171,40 @@ model Order {
   @@index([userId])
   @@index([status])
   @@map("orders")
+}
+
+model CouponTemplate {
+  id              String       @id @default(cuid())
+  name            String
+  thresholdAmount Decimal      @map("threshold_amount") @db.Decimal(10, 2)
+  discountAmount  Decimal      @map("discount_amount") @db.Decimal(10, 2)
+  startDate       DateTime?    @map("start_date") @db.Date
+  endDate         DateTime?    @map("end_date") @db.Date
+  description     String?
+  enabled         Boolean      @default(true)
+  userCoupons     UserCoupon[]
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([enabled, endDate])
+  @@map("coupon_templates")
+}
+
+model UserCoupon {
+  id         String           @id @default(cuid())
+  templateId String           @map("template_id")
+  userId     String           @map("user_id")
+  status     UserCouponStatus @default(UNUSED)
+  usedOrder  Order?           @relation("OrderCoupon")
+  usedAt     DateTime?        @map("used_at")
+  template   CouponTemplate   @relation(fields: [templateId], references: [id])
+  user       User             @relation(fields: [userId], references: [id])
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([templateId])
+  @@map("user_coupons")
 }
 
 model Membership {
@@ -225,6 +278,23 @@ model AiConversation {
 
   @@index([userId, createdAt])
   @@map("ai_conversations")
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String           @map("user_id")
+  title       String
+  content     String
+  type        NotificationType
+  relatedType String?          @map("related_type")
+  relatedId   String?          @map("related_id")
+  readAt      DateTime?        @map("read_at")
+  user        User             @relation(fields: [userId], references: [id])
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@index([userId, readAt, createdAt])
+  @@index([type, createdAt])
+  @@map("notifications")
 }
 
 model FollowUpTask {

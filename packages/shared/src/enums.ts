@@ -43,3 +43,17 @@ export enum PackageCardStatus {
   Expired = "EXPIRED",
   Disabled = "DISABLED"
 }
+
+export enum UserCouponStatus {
+  Unused = "UNUSED",
+  Used = "USED",
+  Expired = "EXPIRED",
+  Disabled = "DISABLED"
+}
+
+export enum NotificationType {
+  BookingCreated = "BOOKING_CREATED",
+  BookingConfirmed = "BOOKING_CONFIRMED",
+  BookingCancelled = "BOOKING_CANCELLED",
+  OrderPaid = "ORDER_PAID"
+}

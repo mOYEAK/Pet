@@ -16,6 +16,13 @@ export class UsersService {
         membership: true,
         packageCards: {
           include: { service: true }
+        },
+        userCoupons: {
+          include: { template: true }
+        },
+        notifications: {
+          orderBy: { createdAt: "desc" },
+          take: 5
         }
       },
       orderBy: { createdAt: "desc" }
@@ -39,6 +46,9 @@ export class UsersService {
         },
         orders: {
           include: {
+            coupon: {
+              include: { template: true }
+            },
             booking: {
               include: {
                 pet: true,
@@ -56,8 +66,19 @@ export class UsersService {
           },
           orderBy: { createdAt: "desc" }
         },
+        userCoupons: {
+          include: {
+            template: true,
+            usedOrder: true
+          },
+          orderBy: { createdAt: "desc" }
+        },
         consumptionRecords: {
           orderBy: { createdAt: "desc" }
+        },
+        notifications: {
+          orderBy: { createdAt: "desc" },
+          take: 8
         }
       }
     });

@@ -23,8 +23,10 @@ export interface User {
   orders?: Order[];
   membership?: Membership | null;
   packageCards?: PackageCard[];
+  userCoupons?: UserCoupon[];
   consumptionRecords?: ConsumptionRecord[];
   followUpTasks?: FollowUpTask[];
+  notifications?: NotificationItem[];
   lastActivityAt?: string | null;
   inactiveDays?: number | null;
   recallMessage?: string;
@@ -84,7 +86,9 @@ export interface Order {
   id: string;
   bookingId: string;
   userId: string;
+  couponId: string | null;
   totalAmount: number;
+  discountAmount: number;
   paidAmount: number;
   payMethod: string | null;
   status: string;
@@ -92,6 +96,7 @@ export interface Order {
   updatedAt: string;
   user?: User;
   booking?: Booking;
+  coupon?: UserCoupon | null;
   consumptionRecords?: ConsumptionRecord[];
 }
 
@@ -130,6 +135,48 @@ export interface PackageCard {
   updatedAt: string;
   user?: User;
   service?: ServiceItem;
+}
+
+export interface CouponTemplate {
+  id: string;
+  name: string;
+  thresholdAmount: number;
+  discountAmount: number;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    userCoupons: number;
+  };
+}
+
+export interface UserCoupon {
+  id: string;
+  templateId: string;
+  userId: string;
+  status: string;
+  usedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  template?: CouponTemplate;
+  user?: User;
+  usedOrder?: Order | null;
+}
+
+export interface NotificationItem {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  type: string;
+  relatedType: string | null;
+  relatedId: string | null;
+  readAt: string | null;
+  createdAt: string;
+  user?: User;
 }
 
 export interface KnowledgeBaseItem {
@@ -217,6 +264,16 @@ export interface KnowledgeBasePayload {
   enabled?: boolean;
 }
 
+export interface CouponTemplatePayload {
+  name: string;
+  thresholdAmount: number;
+  discountAmount: number;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+  enabled?: boolean;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -286,10 +343,38 @@ export const api = {
   user: (id: string) => request<User>(`/api/users/${id}`),
   pets: () => request<Pet[]>("/api/pets"),
   orders: () => request<Order[]>("/api/orders"),
-  payOrder: (id: string, payload: { payMethod: string; paidAmount?: number; packageCardId?: string }) =>
+  payOrder: (id: string, payload: { payMethod: string; paidAmount?: number; packageCardId?: string; couponId?: string }) =>
     request<Order>(`/api/orders/${id}/pay`, {
       method: "PATCH",
       body: JSON.stringify(payload)
+    }),
+  couponTemplates: () => request<CouponTemplate[]>("/api/coupons/templates"),
+  createCouponTemplate: (payload: CouponTemplatePayload) =>
+    request<CouponTemplate>("/api/coupons/templates", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+  updateCouponTemplate: (id: string, payload: Partial<CouponTemplatePayload>) =>
+    request<CouponTemplate>(`/api/coupons/templates/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }),
+  issueCoupon: (payload: { templateId: string; userId: string }) =>
+    request<UserCoupon>("/api/coupons/issue", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+  userCoupons: (userId?: string) => request<UserCoupon[]>(`/api/coupons/user-coupons${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`),
+  notifications: (userId?: string) => request<NotificationItem[]>(`/api/notifications${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`),
+  unreadNotifications: (userId: string) => request<{ count: number }>(`/api/notifications/unread-count?userId=${encodeURIComponent(userId)}`),
+  markNotificationRead: (id: string) =>
+    request<NotificationItem>(`/api/notifications/${id}/read`, {
+      method: "PATCH"
+    }),
+  markAllNotificationsRead: (userId: string) =>
+    request<{ count: number }>("/api/notifications/read-all", {
+      method: "PATCH",
+      body: JSON.stringify({ userId })
     }),
   consumptionRecords: () => request<ConsumptionRecord[]>("/api/memberships/consumption-records"),
   memberships: () => request<Membership[]>("/api/memberships"),

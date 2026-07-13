@@ -1,11 +1,13 @@
 import {
   BookingStatus,
+  NotificationType,
   OrderStatus,
   PackageCardStatus,
   PetGender,
   PetType,
   PrismaClient,
   SizeType,
+  UserCouponStatus,
   UserRole
 } from "@prisma/client";
 
@@ -178,6 +180,29 @@ async function main() {
     }
   });
 
+  const couponTemplate = await prisma.couponTemplate.upsert({
+    where: { id: "coupon_template_return_20_demo" },
+    update: {
+      name: "老客户护理满减券",
+      thresholdAmount: 128,
+      discountAmount: 20,
+      startDate: utcDate("2026-01-01"),
+      endDate: utcDate("2027-12-31"),
+      description: "护理类服务满 128 减 20，用于优惠券核销演示。",
+      enabled: true
+    },
+    create: {
+      id: "coupon_template_return_20_demo",
+      name: "老客户护理满减券",
+      thresholdAmount: 128,
+      discountAmount: 20,
+      startDate: utcDate("2026-01-01"),
+      endDate: utcDate("2027-12-31"),
+      description: "护理类服务满 128 减 20，用于优惠券核销演示。",
+      enabled: true
+    }
+  });
+
   const pet = await prisma.pet.upsert({
     where: { id: "pet_mimi_demo" },
     update: {
@@ -240,6 +265,10 @@ async function main() {
       notes: "皮肤敏感，建议低敏洗护。"
     }
   });
+
+  await upsertUserCoupon("user_coupon_customer_unused_demo", couponTemplate.id, customer.id, UserCouponStatus.UNUSED);
+  await upsertUserCoupon("user_coupon_dog_unused_demo", couponTemplate.id, dogCustomer.id, UserCouponStatus.UNUSED);
+  const usedCoupon = await upsertUserCoupon("user_coupon_customer_used_demo", couponTemplate.id, customer.id, UserCouponStatus.USED, "2026-06-27");
 
   const booking = await prisma.booking.upsert({
     where: { id: "booking_demo_confirmed" },
@@ -307,7 +336,7 @@ async function main() {
     }
   });
 
-  const order = await upsertOrder("order_demo_paid", booking.id, customer.id, 128, 128, "STORE_PAY", OrderStatus.PAID);
+  const order = await upsertOrder("order_demo_paid", booking.id, customer.id, 128, 108, "STORE_PAY", OrderStatus.PAID, 20, usedCoupon.id);
   const dogOrder = await upsertOrder("order_demo_dog_paid", pendingBooking.id, dogCustomer.id, 198, 198, "MOCK_PAY", OrderStatus.PAID);
   const oldOrder = await upsertOrder("order_demo_old_paid", oldBooking.id, inactiveCustomer.id, 128, 128, "MEMBER_BALANCE", OrderStatus.PAID);
 
@@ -393,9 +422,40 @@ async function main() {
     }
   });
 
-  await upsertConsumption("consumption_demo_order_paid", customer.id, order.id, 128, "ORDER_PAYMENT", "猫咪洗护到店支付");
+  await upsertConsumption("consumption_demo_order_paid", customer.id, order.id, 108, "ORDER_PAYMENT", "猫咪洗护到店支付，优惠 ¥20.00");
   await upsertConsumption("consumption_demo_dog_paid", dogCustomer.id, dogOrder.id, 198, "ORDER_PAYMENT", "宠物美容护理模拟支付");
   await upsertConsumption("consumption_demo_old_paid", inactiveCustomer.id, oldOrder.id, 128, "MEMBER_BALANCE_PAYMENT", "猫咪洗护会员余额支付");
+
+  await upsertNotification(
+    "notification_booking_confirmed_demo",
+    customer.id,
+    "预约已确认",
+    "猫咪洗护预约已确认，请按时到店。",
+    NotificationType.BOOKING_CONFIRMED,
+    "booking",
+    booking.id,
+    false
+  );
+  await upsertNotification(
+    "notification_order_paid_demo",
+    customer.id,
+    "订单已支付",
+    "猫咪洗护已完成支付，实付 ¥108.00，优惠 ¥20.00。",
+    NotificationType.ORDER_PAID,
+    "order",
+    order.id,
+    true
+  );
+  await upsertNotification(
+    "notification_dog_pending_demo",
+    dogCustomer.id,
+    "预约已提交",
+    "宠物美容护理预约已提交，门店确认后会更新状态。",
+    NotificationType.BOOKING_CREATED,
+    "booking",
+    pendingBooking.id,
+    false
+  );
 
   await upsertKnowledge("kb_booking_rules_demo", "预约规则", "请至少提前两小时预约。如需临时加急，请联系门店工作人员。", "预约");
   await upsertKnowledge("kb_cat_notice_demo", "猫咪洗护注意事项", "猫咪害怕吹风或容易应激时，请提前备注，门店会安排更温柔的吹干方式。", "护理");
@@ -432,14 +492,18 @@ async function upsertOrder(
   totalAmount: number,
   paidAmount: number,
   payMethod: string,
-  status: OrderStatus
+  status: OrderStatus,
+  discountAmount = 0,
+  couponId?: string
 ) {
   return prisma.order.upsert({
     where: { bookingId },
     update: {
       totalAmount,
+      discountAmount,
       paidAmount,
       payMethod,
+      couponId,
       status
     },
     create: {
@@ -447,9 +511,30 @@ async function upsertOrder(
       bookingId,
       userId,
       totalAmount,
+      discountAmount,
       paidAmount,
       payMethod,
+      couponId,
       status
+    }
+  });
+}
+
+async function upsertUserCoupon(id: string, templateId: string, userId: string, status: UserCouponStatus, usedAt?: string) {
+  return prisma.userCoupon.upsert({
+    where: { id },
+    update: {
+      templateId,
+      userId,
+      status,
+      usedAt: usedAt ? storeDateTime(usedAt, "12:00") : null
+    },
+    create: {
+      id,
+      templateId,
+      userId,
+      status,
+      usedAt: usedAt ? storeDateTime(usedAt, "12:00") : null
     }
   });
 }
@@ -508,6 +593,39 @@ async function upsertFollowUp(id: string, userId: string, title: string, content
       content,
       status,
       dueDate: utcDate(dueDate)
+    }
+  });
+}
+
+async function upsertNotification(
+  id: string,
+  userId: string,
+  title: string,
+  content: string,
+  type: NotificationType,
+  relatedType: string,
+  relatedId: string,
+  read: boolean
+) {
+  await prisma.notification.upsert({
+    where: { id },
+    update: {
+      title,
+      content,
+      type,
+      relatedType,
+      relatedId,
+      readAt: read ? new Date() : null
+    },
+    create: {
+      id,
+      userId,
+      title,
+      content,
+      type,
+      relatedType,
+      relatedId,
+      readAt: read ? new Date() : null
     }
   });
 }

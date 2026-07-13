@@ -21,6 +21,9 @@
       <el-table-column label="应收" width="120">
         <template #default="{ row }">{{ formatMoney(row.totalAmount) }}</template>
       </el-table-column>
+      <el-table-column label="优惠" width="120">
+        <template #default="{ row }">{{ row.discountAmount > 0 ? `-${formatMoney(row.discountAmount)}` : "-" }}</template>
+      </el-table-column>
       <el-table-column label="实收/核销" width="120">
         <template #default="{ row }">{{ formatMoney(row.paidAmount) }}</template>
       </el-table-column>
@@ -70,8 +73,28 @@
           </el-select>
           <p v-if="!usablePackageCards.length" class="form-tip">该客户暂无匹配当前服务的可用套餐卡。</p>
         </el-form-item>
+        <el-form-item v-else label="优惠券">
+          <el-select v-model="payForm.couponId" clearable placeholder="不使用优惠券" :loading="loadingCoupons">
+            <el-option
+              v-for="coupon in usableCoupons"
+              :key="coupon.id"
+              :label="`${coupon.template?.name ?? coupon.id}（满 ${formatMoney(coupon.template?.thresholdAmount)} 减 ${formatMoney(coupon.template?.discountAmount)}）`"
+              :value="coupon.id"
+            />
+          </el-select>
+          <p v-if="!usableCoupons.length" class="form-tip muted-tip">该客户暂无满足当前订单金额的可用优惠券。</p>
+        </el-form-item>
+        <el-form-item label="优惠金额">
+          <span>{{ selectedCoupon ? `-${formatMoney(selectedCoupon.template?.discountAmount)}` : "-" }}</span>
+        </el-form-item>
         <el-form-item label="实收金额">
-          <el-input-number v-model="payForm.paidAmount" :min="0" :precision="2" :step="10" :disabled="payForm.payMethod === 'PACKAGE_CARD'" />
+          <el-input-number
+            v-model="payForm.paidAmount"
+            :min="0"
+            :precision="2"
+            :step="10"
+            :disabled="payForm.payMethod === 'PACKAGE_CARD' || !!payForm.couponId"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -85,21 +108,24 @@
 <script setup lang="ts">
 import { ElMessage } from "element-plus";
 import { computed, onMounted, reactive, ref, watch } from "vue";
-import { api, type Order, type PackageCard } from "../api/client";
+import { api, type Order, type PackageCard, type UserCoupon } from "../api/client";
 import { fallback, formatDateTime, formatMoney } from "../utils/format";
 import { orderStatusText } from "../utils/status";
 
 const orders = ref<Order[]>([]);
 const packageCards = ref<PackageCard[]>([]);
+const userCoupons = ref<UserCoupon[]>([]);
 const loading = ref(false);
 const loadingPackageCards = ref(false);
+const loadingCoupons = ref(false);
 const paying = ref(false);
 const payDialogVisible = ref(false);
 const currentOrder = ref<Order | null>(null);
 const payForm = reactive({
   payMethod: "STORE_PAY",
   paidAmount: 0,
-  packageCardId: ""
+  packageCardId: "",
+  couponId: ""
 });
 const payMethodText: Record<string, string> = {
   STORE_PAY: "到店支付",
@@ -113,16 +139,32 @@ const usablePackageCards = computed(() => {
   return packageCards.value.filter((card) => card.serviceId === serviceId && card.status === "ACTIVE" && card.remainingTimes > 0);
 });
 
+const usableCoupons = computed(() => {
+  const totalAmount = currentOrder.value?.totalAmount ?? 0;
+  return userCoupons.value.filter(
+    (coupon) => coupon.status === "UNUSED" && coupon.template?.enabled && totalAmount >= (coupon.template.thresholdAmount ?? Infinity)
+  );
+});
+
+const selectedCoupon = computed(() => usableCoupons.value.find((coupon) => coupon.id === payForm.couponId));
+
 watch(
   () => payForm.payMethod,
   (method) => {
     if (method === "PACKAGE_CARD") {
       payForm.paidAmount = currentOrder.value?.totalAmount ?? 0;
       payForm.packageCardId = usablePackageCards.value[0]?.id ?? "";
+      payForm.couponId = "";
     } else {
       payForm.packageCardId = "";
+      updatePayAmountFromCoupon();
     }
   }
+);
+
+watch(
+  () => payForm.couponId,
+  () => updatePayAmountFromCoupon()
 );
 
 async function load() {
@@ -147,14 +189,28 @@ async function loadPackageCards(userId: string) {
   }
 }
 
+async function loadUserCoupons(userId: string) {
+  loadingCoupons.value = true;
+  try {
+    userCoupons.value = await api.userCoupons(userId);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "优惠券加载失败");
+  } finally {
+    loadingCoupons.value = false;
+  }
+}
+
 async function openPay(order: Order) {
   currentOrder.value = order;
   payForm.payMethod = order.payMethod ?? "STORE_PAY";
   payForm.paidAmount = order.paidAmount > 0 ? order.paidAmount : order.totalAmount;
   payForm.packageCardId = "";
+  payForm.couponId = "";
   packageCards.value = [];
+  userCoupons.value = [];
   payDialogVisible.value = true;
-  await loadPackageCards(order.userId);
+  await Promise.all([loadPackageCards(order.userId), loadUserCoupons(order.userId)]);
+  updatePayAmountFromCoupon();
 }
 
 async function pay() {
@@ -172,7 +228,8 @@ async function pay() {
     await api.payOrder(currentOrder.value.id, {
       payMethod: payForm.payMethod,
       paidAmount: payForm.paidAmount,
-      packageCardId: payForm.packageCardId || undefined
+      packageCardId: payForm.packageCardId || undefined,
+      couponId: payForm.payMethod === "PACKAGE_CARD" ? undefined : payForm.couponId || undefined
     });
     ElMessage.success("订单已支付");
     payDialogVisible.value = false;
@@ -184,6 +241,15 @@ async function pay() {
   }
 }
 
+function updatePayAmountFromCoupon() {
+  if (!currentOrder.value || payForm.payMethod === "PACKAGE_CARD") {
+    return;
+  }
+
+  const discount = selectedCoupon.value?.template?.discountAmount ?? 0;
+  payForm.paidAmount = Math.max(currentOrder.value.totalAmount - discount, 0);
+}
+
 onMounted(load);
 </script>
 
@@ -193,5 +259,9 @@ onMounted(load);
   margin: 6px 0 0;
   color: #ef4444;
   font-size: 12px;
+}
+
+.muted-tip {
+  color: #64748b;
 }
 </style>

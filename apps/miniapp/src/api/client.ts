@@ -61,10 +61,13 @@ export interface Order {
   id: string;
   bookingId: string;
   userId: string;
+  couponId: string | null;
   totalAmount: number;
+  discountAmount: number;
   paidAmount: number;
   payMethod: string | null;
   status: string;
+  coupon?: UserCoupon | null;
 }
 
 export interface ConsumptionRecord {
@@ -86,6 +89,40 @@ export interface PackageCard {
   expireDate: string | null;
   status: string;
   service?: ServiceItem;
+}
+
+export interface CouponTemplate {
+  id: string;
+  name: string;
+  thresholdAmount: number;
+  discountAmount: number;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+  enabled: boolean;
+}
+
+export interface UserCoupon {
+  id: string;
+  templateId: string;
+  userId: string;
+  status: string;
+  usedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  template?: CouponTemplate;
+}
+
+export interface NotificationItem {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  type: string;
+  relatedType: string | null;
+  relatedId: string | null;
+  readAt: string | null;
+  createdAt: string;
 }
 
 export interface StoreSettings {
@@ -182,6 +219,11 @@ export const api = {
   cancelBooking: (id: string) => request<Booking>(`/bookings/${id}/cancel`, "PATCH"),
   membership: (userId: string) => request<Membership>(`/memberships/by-user/${encodeURIComponent(userId)}`),
   packageCards: (userId: string) => request<PackageCard[]>(`/memberships/package-cards?userId=${encodeURIComponent(userId)}`),
+  userCoupons: (userId: string) => request<UserCoupon[]>(`/coupons/user-coupons?userId=${encodeURIComponent(userId)}`),
+  notifications: (userId: string) => request<NotificationItem[]>(`/notifications?userId=${encodeURIComponent(userId)}`),
+  unreadNotifications: (userId: string) => request<{ count: number }>(`/notifications/unread-count?userId=${encodeURIComponent(userId)}`),
+  markNotificationRead: (id: string) => request<NotificationItem>(`/notifications/${id}/read`, "PATCH"),
+  markAllNotificationsRead: (userId: string) => request<{ count: number }>("/notifications/read-all", "PATCH", { userId }),
   consumptionRecords: (userId: string) =>
     request<ConsumptionRecord[]>(`/memberships/consumption-records?userId=${encodeURIComponent(userId)}`),
   storeSettings: () => request<StoreSettings>("/settings/store"),

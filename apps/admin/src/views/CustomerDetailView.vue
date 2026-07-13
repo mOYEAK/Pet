@@ -34,6 +34,7 @@
             <el-descriptions-item label="余额">{{ formatMoney(customer.membership?.balance) }}</el-descriptions-item>
             <el-descriptions-item label="积分">{{ customer.membership?.points ?? 0 }}</el-descriptions-item>
             <el-descriptions-item label="套餐卡">{{ customer.packageCards?.length ?? 0 }} 张</el-descriptions-item>
+            <el-descriptions-item label="优惠券">{{ customer.userCoupons?.filter((coupon) => coupon.status === "UNUSED").length ?? 0 }} 张可用</el-descriptions-item>
           </el-descriptions>
         </el-card>
       </div>
@@ -77,6 +78,46 @@
       </el-card>
 
       <el-card shadow="never" class="section-card">
+        <template #header>优惠券</template>
+        <el-table :data="customer.userCoupons ?? []" border>
+          <el-table-column label="名称" min-width="150">
+            <template #default="{ row }">{{ row.template?.name ?? row.templateId }}</template>
+          </el-table-column>
+          <el-table-column label="规则" min-width="150">
+            <template #default="{ row }">
+              满 {{ formatMoney(row.template?.thresholdAmount) }} 减 {{ formatMoney(row.template?.discountAmount) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">{{ userCouponStatusText[row.status] ?? row.status }}</template>
+          </el-table-column>
+          <el-table-column label="有效期" width="180">
+            <template #default="{ row }">{{ formatDate(row.template?.startDate) }} 至 {{ formatDate(row.template?.endDate) }}</template>
+          </el-table-column>
+          <el-table-column label="使用时间" width="170">
+            <template #default="{ row }">{{ formatDateTime(row.usedAt) }}</template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
+      <el-card shadow="never" class="section-card">
+        <template #header>最近通知</template>
+        <el-table :data="customer.notifications ?? []" border>
+          <el-table-column label="类型" width="120">
+            <template #default="{ row }">{{ notificationTypeText[row.type] ?? row.type }}</template>
+          </el-table-column>
+          <el-table-column prop="title" label="标题" min-width="140" />
+          <el-table-column prop="content" label="内容" min-width="240" show-overflow-tooltip />
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">{{ row.readAt ? "已读" : "未读" }}</template>
+          </el-table-column>
+          <el-table-column label="时间" width="170">
+            <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
+      <el-card shadow="never" class="section-card">
         <template #header>历史预约</template>
         <el-table :data="customer.bookings ?? []" border>
           <el-table-column label="预约时间" width="170">
@@ -105,6 +146,9 @@
               </el-table-column>
               <el-table-column label="金额" width="120">
                 <template #default="{ row }">{{ formatMoney(row.paidAmount || row.totalAmount) }}</template>
+              </el-table-column>
+              <el-table-column label="优惠" width="120">
+                <template #default="{ row }">{{ row.discountAmount > 0 ? `-${formatMoney(row.discountAmount)}` : "-" }}</template>
               </el-table-column>
               <el-table-column label="状态" width="100">
                 <template #default="{ row }">{{ orderStatusText[row.status] ?? row.status }}</template>
@@ -138,7 +182,14 @@ import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { api, type User } from "../api/client";
 import { fallback, formatDate, formatDateTime, formatMoney } from "../utils/format";
-import { bookingStatusText, orderStatusText, packageCardStatusText, petTypeText } from "../utils/status";
+import {
+  bookingStatusText,
+  notificationTypeText,
+  orderStatusText,
+  packageCardStatusText,
+  petTypeText,
+  userCouponStatusText
+} from "../utils/status";
 
 const route = useRoute();
 const router = useRouter();
