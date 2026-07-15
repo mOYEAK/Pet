@@ -28,6 +28,28 @@
 
     <view class="card">
       <view class="section-header">
+        <text class="card-title">充值记录</text>
+        <text class="link" @click="load">刷新</text>
+      </view>
+      <view v-if="rechargeRecords.length === 0" class="muted">暂无充值记录。</view>
+      <view v-else class="record-list">
+        <view v-for="record in rechargeRecords.slice(0, 8)" :key="record.id" class="record-item">
+          <view>
+            <text class="record-title">{{ rechargePayMethodText[record.payMethod] ?? record.payMethod }}</text>
+            <text class="muted">实收 {{ formatMoney(record.paidAmount) }}，赠送 {{ formatMoney(record.bonusAmount) }}</text>
+            <text v-if="record.remark" class="muted">{{ record.remark }}</text>
+          </view>
+          <view class="record-right">
+            <text class="recharge-amount">+{{ formatMoney(record.creditedAmount) }}</text>
+            <text class="muted">余额 {{ formatMoney(record.balanceAfter) }}</text>
+            <text class="muted">{{ formatDateTime(record.createdAt) }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-header">
         <text class="card-title">我的套餐卡</text>
         <text class="link" @click="load">刷新</text>
       </view>
@@ -91,35 +113,53 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import PageNav from "../../components/PageNav.vue";
-import { api, getCurrentUser, type ConsumptionRecord, type Membership, type PackageCard, type UserCoupon } from "../../api/client";
+import {
+  api,
+  getCurrentUser,
+  type ConsumptionRecord,
+  type Membership,
+  type PackageCard,
+  type RechargeRecord,
+  type UserCoupon
+} from "../../api/client";
 import { formatDate, formatDateTime, formatMoney } from "../../utils/format";
 import { consumptionTypeText, packageCardStatusText, userCouponStatusText } from "../../utils/status";
 
 const membership = ref<Membership | null>(null);
 const records = ref<ConsumptionRecord[]>([]);
+const rechargeRecords = ref<RechargeRecord[]>([]);
 const packageCards = ref<PackageCard[]>([]);
 const userCoupons = ref<UserCoupon[]>([]);
 const loading = ref(false);
+const rechargePayMethodText: Record<string, string> = {
+  CASH: "现金充值",
+  WECHAT: "微信充值",
+  ALIPAY: "支付宝充值",
+  MOCK_PAY: "模拟充值"
+};
 
 async function load() {
   loading.value = true;
   try {
     const user = await getCurrentUser();
-    const [membershipInfo, cardList, couponList, consumptionRecords] = await Promise.all([
+    const [membershipInfo, cardList, couponList, consumptionRecords, rechargeList] = await Promise.all([
       api.membership(user.id),
       api.packageCards(user.id),
       api.userCoupons(user.id),
-      api.consumptionRecords(user.id)
+      api.consumptionRecords(user.id),
+      api.rechargeRecords(user.id)
     ]);
     membership.value = membershipInfo;
     packageCards.value = cardList;
     userCoupons.value = couponList;
     records.value = consumptionRecords;
+    rechargeRecords.value = rechargeList;
   } catch (error) {
     membership.value = null;
     packageCards.value = [];
     userCoupons.value = [];
     records.value = [];
+    rechargeRecords.value = [];
     uni.showToast({
       title: error instanceof Error ? error.message : "会员信息加载失败",
       icon: "none"
@@ -135,7 +175,7 @@ onMounted(load);
 <style scoped>
 .page {
   min-height: 100vh;
-  padding: 20px;
+  padding: 20px 20px 88px;
 }
 
 .page-header,
@@ -237,6 +277,11 @@ onMounted(load);
 .record-amount,
 .link {
   color: #2563eb;
+}
+
+.recharge-amount {
+  color: #15803d;
+  font-weight: 700;
 }
 
 .stat {

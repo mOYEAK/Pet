@@ -6,6 +6,7 @@ import {
   PetGender,
   PetType,
   PrismaClient,
+  RechargePayMethod,
   SizeType,
   UserCouponStatus,
   UserRole
@@ -390,6 +391,31 @@ async function main() {
     }
   });
 
+  await prisma.rechargeRecord.upsert({
+    where: { id: "recharge_customer_demo" },
+    update: {
+      userId: customer.id,
+      paidAmount: 280,
+      bonusAmount: 20,
+      creditedAmount: 300,
+      balanceBefore: 0,
+      balanceAfter: 300,
+      payMethod: RechargePayMethod.WECHAT,
+      remark: "新客储值活动，实收 280 元赠送 20 元。"
+    },
+    create: {
+      id: "recharge_customer_demo",
+      userId: customer.id,
+      paidAmount: 280,
+      bonusAmount: 20,
+      creditedAmount: 300,
+      balanceBefore: 0,
+      balanceAfter: 300,
+      payMethod: RechargePayMethod.WECHAT,
+      remark: "新客储值活动，实收 280 元赠送 20 元。"
+    }
+  });
+
   await prisma.membership.upsert({
     where: { userId: dogCustomer.id },
     update: {
@@ -489,6 +515,26 @@ async function main() {
     "order",
     order.id,
     true
+  );
+  await upsertNotification(
+    "notification_membership_recharged_demo",
+    customer.id,
+    "会员充值到账",
+    "会员账户已到账 ¥300.00（实收 ¥280.00，赠送 ¥20.00），当前余额 ¥300.00。",
+    NotificationType.MEMBERSHIP_RECHARGED,
+    "recharge",
+    "recharge_customer_demo",
+    false
+  );
+  await upsertNotification(
+    "notification_package_card_issued_demo",
+    customer.id,
+    "套餐卡已到账",
+    "会员账户已获得猫咪洗护 5 次卡，有效期至 2027-06-21。",
+    NotificationType.PACKAGE_CARD_ISSUED,
+    "package_card",
+    "package_card_cat_bath_demo",
+    false
   );
   await upsertNotification(
     "notification_dog_pending_demo",

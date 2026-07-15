@@ -80,6 +80,19 @@ export interface ConsumptionRecord {
   createdAt: string;
 }
 
+export interface RechargeRecord {
+  id: string;
+  userId: string;
+  paidAmount: number;
+  bonusAmount: number;
+  creditedAmount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  payMethod: string;
+  remark: string | null;
+  createdAt: string;
+}
+
 export interface PackageCard {
   id: string;
   userId: string;
@@ -230,7 +243,7 @@ export const api = {
   bookings: (userId: string) => request<Booking[]>(`/bookings?userId=${encodeURIComponent(userId)}`),
   createBooking: (payload: CreateBookingPayload) => request<Booking>("/bookings", "POST", payload),
   cancelBooking: (id: string) => request<Booking>(`/bookings/${id}/cancel`, "PATCH"),
-  membership: (userId: string) => request<Membership>(`/memberships/by-user/${encodeURIComponent(userId)}`),
+  membership: (userId: string) => request<Membership | null>(`/memberships/by-user/${encodeURIComponent(userId)}`),
   packageCards: (userId: string) => request<PackageCard[]>(`/memberships/package-cards?userId=${encodeURIComponent(userId)}`),
   userCoupons: (userId: string) => request<UserCoupon[]>(`/coupons/user-coupons?userId=${encodeURIComponent(userId)}`),
   notifications: (userId: string) => request<NotificationItem[]>(`/notifications?userId=${encodeURIComponent(userId)}`),
@@ -239,6 +252,8 @@ export const api = {
   markAllNotificationsRead: (userId: string) => request<{ count: number }>("/notifications/read-all", "PATCH", { userId }),
   consumptionRecords: (userId: string) =>
     request<ConsumptionRecord[]>(`/memberships/consumption-records?userId=${encodeURIComponent(userId)}`),
+  rechargeRecords: (userId: string) =>
+    request<RechargeRecord[]>(`/memberships/recharge-records?userId=${encodeURIComponent(userId)}`),
   storeSettings: () => request<StoreSettings>("/settings/store"),
   askCustomerService: (payload: { userId?: string; message: string }) =>
     request<AiCustomerServiceResponse>("/ai/customer-service", "POST", payload)

@@ -60,11 +60,20 @@ enum UserCouponStatus {
   DISABLED
 }
 
+enum RechargePayMethod {
+  CASH
+  WECHAT
+  ALIPAY
+  MOCK_PAY
+}
+
 enum NotificationType {
   BOOKING_CREATED
   BOOKING_CONFIRMED
   BOOKING_CANCELLED
   BOOKING_REMINDER
+  MEMBERSHIP_RECHARGED
+  PACKAGE_CARD_ISSUED
   ORDER_PAID
 }
 
@@ -81,6 +90,7 @@ model User {
   packageCards       PackageCard[]
   userCoupons        UserCoupon[]
   consumptionRecords ConsumptionRecord[]
+  rechargeRecords    RechargeRecord[]
   followUpTasks      FollowUpTask[]
   aiConversations    AiConversation[]
   notifications      Notification[]
@@ -253,6 +263,24 @@ model ConsumptionRecord {
 
   @@index([userId, createdAt])
   @@map("consumption_records")
+}
+
+model RechargeRecord {
+  id             String            @id @default(cuid())
+  userId         String            @map("user_id")
+  paidAmount     Decimal           @map("paid_amount") @db.Decimal(10, 2)
+  bonusAmount    Decimal           @default(0) @map("bonus_amount") @db.Decimal(10, 2)
+  creditedAmount Decimal           @map("credited_amount") @db.Decimal(10, 2)
+  balanceBefore  Decimal           @map("balance_before") @db.Decimal(10, 2)
+  balanceAfter   Decimal           @map("balance_after") @db.Decimal(10, 2)
+  payMethod      RechargePayMethod @map("pay_method")
+  remark         String?
+  user           User              @relation(fields: [userId], references: [id])
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([payMethod, createdAt])
+  @@map("recharge_records")
 }
 
 model KnowledgeBase {

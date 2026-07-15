@@ -76,6 +76,10 @@ export class UsersService {
         consumptionRecords: {
           orderBy: { createdAt: "desc" }
         },
+        rechargeRecords: {
+          orderBy: { createdAt: "desc" },
+          take: 10
+        },
         notifications: {
           orderBy: { createdAt: "desc" },
           take: 8

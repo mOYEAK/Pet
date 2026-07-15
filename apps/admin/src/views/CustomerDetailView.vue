@@ -60,6 +60,31 @@
       </el-card>
 
       <el-card shadow="never" class="section-card">
+        <template #header>最近充值</template>
+        <el-table :data="customer.rechargeRecords ?? []" border>
+          <el-table-column label="实收" width="120">
+            <template #default="{ row }">{{ formatMoney(row.paidAmount) }}</template>
+          </el-table-column>
+          <el-table-column label="赠送" width="120">
+            <template #default="{ row }">{{ formatMoney(row.bonusAmount) }}</template>
+          </el-table-column>
+          <el-table-column label="到账" width="120">
+            <template #default="{ row }">{{ formatMoney(row.creditedAmount) }}</template>
+          </el-table-column>
+          <el-table-column label="充值后余额" width="140">
+            <template #default="{ row }">{{ formatMoney(row.balanceAfter) }}</template>
+          </el-table-column>
+          <el-table-column label="支付方式" width="120">
+            <template #default="{ row }">{{ rechargePayMethodText[row.payMethod] ?? row.payMethod }}</template>
+          </el-table-column>
+          <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
+          <el-table-column label="时间" width="170">
+            <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
+      <el-card shadow="never" class="section-card">
         <template #header>套餐卡</template>
         <el-table :data="customer.packageCards ?? []" border>
           <el-table-column label="服务" min-width="150">
@@ -195,6 +220,12 @@ const route = useRoute();
 const router = useRouter();
 const customer = ref<User | null>(null);
 const loading = ref(false);
+const rechargePayMethodText: Record<string, string> = {
+  CASH: "现金",
+  WECHAT: "微信",
+  ALIPAY: "支付宝",
+  MOCK_PAY: "模拟支付"
+};
 
 async function load() {
   loading.value = true;

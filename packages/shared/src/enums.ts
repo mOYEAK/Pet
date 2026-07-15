@@ -51,10 +51,19 @@ export enum UserCouponStatus {
   Disabled = "DISABLED"
 }
 
+export enum RechargePayMethod {
+  Cash = "CASH",
+  Wechat = "WECHAT",
+  Alipay = "ALIPAY",
+  MockPay = "MOCK_PAY"
+}
+
 export enum NotificationType {
   BookingCreated = "BOOKING_CREATED",
   BookingConfirmed = "BOOKING_CONFIRMED",
   BookingCancelled = "BOOKING_CANCELLED",
   BookingReminder = "BOOKING_REMINDER",
+  MembershipRecharged = "MEMBERSHIP_RECHARGED",
+  PackageCardIssued = "PACKAGE_CARD_ISSUED",
   OrderPaid = "ORDER_PAID"
 }

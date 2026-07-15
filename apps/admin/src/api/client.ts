@@ -25,6 +25,7 @@ export interface User {
   packageCards?: PackageCard[];
   userCoupons?: UserCoupon[];
   consumptionRecords?: ConsumptionRecord[];
+  rechargeRecords?: RechargeRecord[];
   followUpTasks?: FollowUpTask[];
   notifications?: NotificationItem[];
   lastActivityAt?: string | null;
@@ -121,6 +122,20 @@ export interface ConsumptionRecord {
   createdAt: string;
   user?: User;
   order?: Order | null;
+}
+
+export interface RechargeRecord {
+  id: string;
+  userId: string;
+  paidAmount: number;
+  bonusAmount: number;
+  creditedAmount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  payMethod: string;
+  remark: string | null;
+  createdAt: string;
+  user?: User;
 }
 
 export interface PackageCard {
@@ -377,8 +392,20 @@ export const api = {
       body: JSON.stringify({ userId })
     }),
   consumptionRecords: () => request<ConsumptionRecord[]>("/api/memberships/consumption-records"),
+  rechargeRecords: (userId?: string) =>
+    request<RechargeRecord[]>(`/api/memberships/recharge-records${userId ? `?userId=${encodeURIComponent(userId)}` : ""}`),
+  rechargeMembership: (payload: { userId: string; paidAmount: number; bonusAmount?: number; payMethod: string; remark?: string }) =>
+    request<{ membership: Membership; rechargeRecord: RechargeRecord }>("/api/memberships/recharges", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
   memberships: () => request<Membership[]>("/api/memberships"),
   packageCards: (userId?: string) => request<PackageCard[]>(`/api/memberships/package-cards${userId ? `?userId=${userId}` : ""}`),
+  issuePackageCard: (payload: { userId: string; serviceId: string; totalTimes: number; expireDate?: string }) =>
+    request<PackageCard>("/api/memberships/package-cards", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
   knowledgeBase: () => request<KnowledgeBaseItem[]>("/api/knowledge-base"),
   createKnowledgeBase: (payload: KnowledgeBasePayload) =>
     request<KnowledgeBaseItem>("/api/knowledge-base", {
