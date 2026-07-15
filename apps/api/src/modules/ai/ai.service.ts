@@ -11,9 +11,10 @@ import {
 } from "@petcare/agent";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { BookingStatus, OrderStatus, PetType, Prisma, SizeType, UserRole } from "@prisma/client";
+import { BookingStatus, PetType, Prisma, SizeType } from "@prisma/client";
 import { serializeEntity } from "../../common/serialize";
 import { PrismaService } from "../prisma/prisma.service";
+import { StatsService } from "../stats/stats.service";
 import { BusinessAssistantDto, CustomerServiceChatDto, MarketingCopyDto } from "./dto";
 
 const TIME_SLOTS = [
@@ -38,7 +39,8 @@ interface CustomerServiceResult {
 export class AiService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService
+    private readonly config: ConfigService,
+    private readonly statsService: StatsService
   ) {}
 
   async customerService(input: CustomerServiceChatDto) {
@@ -97,7 +99,7 @@ export class AiService {
 
   async businessAssistant(input: BusinessAssistantDto) {
     const message = input.message.trim();
-    const data = await this.getBusinessData();
+    const data = await this.statsService.businessData();
     const answer = this.composeBusinessAnswer(message, data);
 
     await this.prisma.aiConversation.create({
@@ -120,7 +122,7 @@ export class AiService {
         take: 5
       }),
       this.getAvailableSlots(this.resolveDate("明天")),
-      this.getBusinessData()
+      this.statsService.businessData()
     ]);
     const channel = input.channel || "朋友圈";
     const tone = input.tone || "亲切";
@@ -451,55 +453,6 @@ export class AiService {
     };
   }
 
-  private async getBusinessData() {
-    const today = this.startOfShanghaiDay(new Date());
-    const tomorrow = new Date(today);
-    tomorrow.setUTCDate(today.getUTCDate() + 1);
-    const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
-    const nextMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 1));
-
-    const [todayOrders, monthOrders, todayBookings, monthBookings, pendingBookings, customers, memberRecords, popularServices] =
-      await Promise.all([
-        this.prisma.order.findMany({
-          where: { status: { in: [OrderStatus.PAID, OrderStatus.COMPLETED] }, createdAt: { gte: today, lt: tomorrow } },
-          select: { paidAmount: true }
-        }),
-        this.prisma.order.findMany({
-          where: { status: { in: [OrderStatus.PAID, OrderStatus.COMPLETED] }, createdAt: { gte: monthStart, lt: nextMonth } },
-          select: { paidAmount: true }
-        }),
-        this.prisma.booking.count({ where: { bookingDate: today } }),
-        this.prisma.booking.count({ where: { bookingDate: { gte: monthStart, lt: nextMonth } } }),
-        this.prisma.booking.count({ where: { status: BookingStatus.PENDING } }),
-        this.prisma.user.count({ where: { role: UserRole.CUSTOMER } }),
-        this.prisma.consumptionRecord.findMany({
-          where: { type: { in: ["MEMBER_BALANCE_PAYMENT", "PACKAGE_CARD_PAYMENT"] }, createdAt: { gte: monthStart, lt: nextMonth } },
-          select: { amount: true, type: true }
-        }),
-        this.prisma.service.findMany({
-          include: { _count: { select: { bookings: true } } },
-          orderBy: { bookings: { _count: "desc" } },
-          take: 5
-        })
-      ]);
-
-    return {
-      todayRevenue: this.sumMoney(todayOrders),
-      monthRevenue: this.sumMoney(monthOrders),
-      todayBookings,
-      monthBookings,
-      pendingBookings,
-      customers,
-      memberConsumption: this.sumMoney(memberRecords),
-      popularServices: popularServices.map((service) => ({
-        id: service.id,
-        name: service.name,
-        basePrice: service.basePrice,
-        bookingCount: service._count.bookings
-      }))
-    };
-  }
-
   private async findKnowledge(message: string) {
     const keywords = this.extractKeywords(message);
 
@@ -570,7 +523,7 @@ export class AiService {
     return lines.join("\n");
   }
 
-  private composeBusinessAnswer(message: string, data: Awaited<ReturnType<AiService["getBusinessData"]>>) {
+  private composeBusinessAnswer(message: string, data: Awaited<ReturnType<StatsService["businessData"]>>) {
     const popular = data.popularServices.length
       ? data.popularServices.map((service) => `${service.name} ${service.bookingCount} 次`).join("、")
       : "暂无服务预约数据";
@@ -583,7 +536,8 @@ export class AiService {
       `根据「${message}」的经营数据汇总：`,
       `今日收入 ¥${data.todayRevenue.toFixed(2)}，今日预约 ${data.todayBookings} 个。`,
       `本月收入 ¥${data.monthRevenue.toFixed(2)}，本月预约 ${data.monthBookings} 个，会员消费/核销 ¥${data.memberConsumption.toFixed(2)}。`,
-      `当前客户数 ${data.customers}，热门服务：${popular}。`,
+      `当前客户数 ${data.customers}，本月复购率 ${data.repeatRate.toFixed(1)}%，60 天未消费客户 ${data.inactiveCustomerCount} 位。`,
+      `热门服务：${popular}。`,
       advice
     ].join("\n");
   }
@@ -667,12 +621,4 @@ export class AiService {
     }).format(value);
   }
 
-  private startOfShanghaiDay(date: Date) {
-    const shanghaiDate = new Date(date.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    return this.parseDateOnly(shanghaiDate);
-  }
-
-  private sumMoney(items: Array<{ paidAmount?: { toNumber: () => number }; amount?: { toNumber: () => number } }>) {
-    return items.reduce((sum, item) => sum + (item.paidAmount?.toNumber() ?? item.amount?.toNumber() ?? 0), 0);
-  }
 }

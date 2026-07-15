@@ -66,6 +66,7 @@ export interface OrderDto {
   payMethod?: string;
   couponId?: string;
   status: OrderStatus;
+  paidAt?: string;
 }
 
 export interface CouponTemplateDto {

@@ -10,8 +10,6 @@ export class FollowUpService {
 
   async churnRisk(query: ChurnRiskQueryDto) {
     const days = query.days ?? 60;
-    const cutoff = new Date();
-    cutoff.setUTCDate(cutoff.getUTCDate() - days);
 
     const customers = await this.prisma.user.findMany({
       where: { role: UserRole.CUSTOMER },
@@ -19,8 +17,8 @@ export class FollowUpService {
         pets: true,
         membership: true,
         orders: {
-          where: { status: { in: ["PAID", "COMPLETED"] } },
-          orderBy: { createdAt: "desc" },
+          where: { status: { in: ["PAID", "COMPLETED"] }, paidAt: { not: null } },
+          orderBy: { paidAt: "desc" },
           take: 1,
           include: {
             booking: {
@@ -45,10 +43,11 @@ export class FollowUpService {
 
     const riskCustomers = customers
       .map((customer) => {
-        const lastOrderAt = customer.orders[0]?.createdAt;
+        const lastOrderAt = customer.orders[0]?.paidAt;
         const lastRecordAt = customer.consumptionRecords[0]?.createdAt;
-        const lastActivityAt = [lastOrderAt, lastRecordAt].filter(Boolean).sort((a, b) => b!.getTime() - a!.getTime())[0] ?? null;
-        const inactiveDays = lastActivityAt ? Math.floor((Date.now() - lastActivityAt.getTime()) / 86_400_000) : null;
+        const lastActivityAt =
+          [lastOrderAt, lastRecordAt].filter(Boolean).sort((a, b) => b!.getTime() - a!.getTime())[0] ?? customer.createdAt;
+        const inactiveDays = Math.floor((Date.now() - lastActivityAt.getTime()) / 86_400_000);
         return {
           ...customer,
           lastActivityAt,

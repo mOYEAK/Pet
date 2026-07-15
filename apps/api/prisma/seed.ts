@@ -31,6 +31,12 @@ function shanghaiDateKeyWithOffset(days: number) {
 }
 
 async function main() {
+  const recentDate = shanghaiDateKeyWithOffset(-1);
+  const repeatDate = shanghaiDateKeyWithOffset(-5);
+  const dogPaidDate = shanghaiDateKeyWithOffset(-3);
+  const pendingDate = shanghaiDateKeyWithOffset(2);
+  const inactiveDate = shanghaiDateKeyWithOffset(-100);
+
   const admin = await prisma.user.upsert({
     where: { phone: "19900000000" },
     update: {
@@ -49,13 +55,15 @@ async function main() {
     where: { phone: "18800000000" },
     update: {
       nickname: "咪咪主人",
-      role: UserRole.CUSTOMER
+      role: UserRole.CUSTOMER,
+      createdAt: storeDateTime(shanghaiDateKeyWithOffset(-4), "10:00")
     },
     create: {
       id: "user_customer_demo",
       phone: "18800000000",
       nickname: "咪咪主人",
-      role: UserRole.CUSTOMER
+      role: UserRole.CUSTOMER,
+      createdAt: storeDateTime(shanghaiDateKeyWithOffset(-4), "10:00")
     }
   });
 
@@ -63,13 +71,15 @@ async function main() {
     where: { phone: "18800000001" },
     update: {
       nickname: "小黄主人",
-      role: UserRole.CUSTOMER
+      role: UserRole.CUSTOMER,
+      createdAt: storeDateTime(shanghaiDateKeyWithOffset(-2), "11:00")
     },
     create: {
       id: "user_dog_customer_demo",
       phone: "18800000001",
       nickname: "小黄主人",
-      role: UserRole.CUSTOMER
+      role: UserRole.CUSTOMER,
+      createdAt: storeDateTime(shanghaiDateKeyWithOffset(-2), "11:00")
     }
   });
 
@@ -77,13 +87,15 @@ async function main() {
     where: { phone: "18800000002" },
     update: {
       nickname: "团团主人",
-      role: UserRole.CUSTOMER
+      role: UserRole.CUSTOMER,
+      createdAt: storeDateTime(shanghaiDateKeyWithOffset(-120), "09:00")
     },
     create: {
       id: "user_inactive_customer_demo",
       phone: "18800000002",
       nickname: "团团主人",
-      role: UserRole.CUSTOMER
+      role: UserRole.CUSTOMER,
+      createdAt: storeDateTime(shanghaiDateKeyWithOffset(-120), "09:00")
     }
   });
 
@@ -275,15 +287,15 @@ async function main() {
 
   await upsertUserCoupon("user_coupon_customer_unused_demo", couponTemplate.id, customer.id, UserCouponStatus.UNUSED);
   await upsertUserCoupon("user_coupon_dog_unused_demo", couponTemplate.id, dogCustomer.id, UserCouponStatus.UNUSED);
-  const usedCoupon = await upsertUserCoupon("user_coupon_customer_used_demo", couponTemplate.id, customer.id, UserCouponStatus.USED, "2026-06-27");
+  const usedCoupon = await upsertUserCoupon("user_coupon_customer_used_demo", couponTemplate.id, customer.id, UserCouponStatus.USED, recentDate);
 
   const booking = await prisma.booking.upsert({
     where: { id: "booking_demo_confirmed" },
     update: {
-      bookingDate: utcDate("2026-06-27"),
-      startTime: storeDateTime("2026-06-27", "10:30"),
-      endTime: storeDateTime("2026-06-27", "12:00"),
-      status: BookingStatus.CONFIRMED,
+      bookingDate: utcDate(recentDate),
+      startTime: storeDateTime(recentDate, "10:30"),
+      endTime: storeDateTime(recentDate, "12:00"),
+      status: BookingStatus.COMPLETED,
       remark: "第一次到店，请温柔一些。"
     },
     create: {
@@ -291,10 +303,10 @@ async function main() {
       userId: customer.id,
       petId: pet.id,
       serviceId: catBath.id,
-      bookingDate: utcDate("2026-06-27"),
-      startTime: storeDateTime("2026-06-27", "10:30"),
-      endTime: storeDateTime("2026-06-27", "12:00"),
-      status: BookingStatus.CONFIRMED,
+      bookingDate: utcDate(recentDate),
+      startTime: storeDateTime(recentDate, "10:30"),
+      endTime: storeDateTime(recentDate, "12:00"),
+      status: BookingStatus.COMPLETED,
       remark: "第一次到店，请温柔一些。"
     }
   });
@@ -357,9 +369,9 @@ async function main() {
   const pendingBooking = await prisma.booking.upsert({
     where: { id: "booking_demo_pending" },
     update: {
-      bookingDate: utcDate("2026-06-27"),
-      startTime: storeDateTime("2026-06-27", "15:00"),
-      endTime: storeDateTime("2026-06-27", "16:30"),
+      bookingDate: utcDate(pendingDate),
+      startTime: storeDateTime(pendingDate, "15:00"),
+      endTime: storeDateTime(pendingDate, "16:30"),
       status: BookingStatus.PENDING,
       remark: "客户希望尽量安排安静区域。"
     },
@@ -368,9 +380,9 @@ async function main() {
       userId: dogCustomer.id,
       petId: dog.id,
       serviceId: grooming.id,
-      bookingDate: utcDate("2026-06-27"),
-      startTime: storeDateTime("2026-06-27", "15:00"),
-      endTime: storeDateTime("2026-06-27", "16:30"),
+      bookingDate: utcDate(pendingDate),
+      startTime: storeDateTime(pendingDate, "15:00"),
+      endTime: storeDateTime(pendingDate, "16:30"),
       status: BookingStatus.PENDING,
       remark: "客户希望尽量安排安静区域。"
     }
@@ -379,9 +391,9 @@ async function main() {
   const oldBooking = await prisma.booking.upsert({
     where: { id: "booking_demo_old" },
     update: {
-      bookingDate: utcDate("2026-03-20"),
-      startTime: storeDateTime("2026-03-20", "09:00"),
-      endTime: storeDateTime("2026-03-20", "10:30"),
+      bookingDate: utcDate(inactiveDate),
+      startTime: storeDateTime(inactiveDate, "09:00"),
+      endTime: storeDateTime(inactiveDate, "10:30"),
       status: BookingStatus.COMPLETED,
       remark: "老客户历史消费，用于召回演示。"
     },
@@ -390,17 +402,106 @@ async function main() {
       userId: inactiveCustomer.id,
       petId: inactivePet.id,
       serviceId: catBath.id,
-      bookingDate: utcDate("2026-03-20"),
-      startTime: storeDateTime("2026-03-20", "09:00"),
-      endTime: storeDateTime("2026-03-20", "10:30"),
+      bookingDate: utcDate(inactiveDate),
+      startTime: storeDateTime(inactiveDate, "09:00"),
+      endTime: storeDateTime(inactiveDate, "10:30"),
       status: BookingStatus.COMPLETED,
       remark: "老客户历史消费，用于召回演示。"
     }
   });
 
-  const order = await upsertOrder("order_demo_paid", booking.id, customer.id, 128, 108, "STORE_PAY", OrderStatus.PAID, 20, usedCoupon.id);
-  const dogOrder = await upsertOrder("order_demo_dog_paid", pendingBooking.id, dogCustomer.id, 198, 198, "MOCK_PAY", OrderStatus.PAID);
-  const oldOrder = await upsertOrder("order_demo_old_paid", oldBooking.id, inactiveCustomer.id, 128, 128, "MEMBER_BALANCE", OrderStatus.PAID);
+  const dogCompletedBooking = await prisma.booking.upsert({
+    where: { id: "booking_demo_dog_completed" },
+    update: {
+      userId: dogCustomer.id,
+      petId: dog.id,
+      serviceId: grooming.id,
+      bookingDate: utcDate(dogPaidDate),
+      startTime: storeDateTime(dogPaidDate, "13:30"),
+      endTime: storeDateTime(dogPaidDate, "15:00"),
+      status: BookingStatus.COMPLETED,
+      remark: "会员余额支付演示。"
+    },
+    create: {
+      id: "booking_demo_dog_completed",
+      userId: dogCustomer.id,
+      petId: dog.id,
+      serviceId: grooming.id,
+      bookingDate: utcDate(dogPaidDate),
+      startTime: storeDateTime(dogPaidDate, "13:30"),
+      endTime: storeDateTime(dogPaidDate, "15:00"),
+      status: BookingStatus.COMPLETED,
+      remark: "会员余额支付演示。"
+    }
+  });
+
+  const repeatBooking = await prisma.booking.upsert({
+    where: { id: "booking_demo_repeat_completed" },
+    update: {
+      userId: customer.id,
+      petId: pet.id,
+      serviceId: catBath.id,
+      bookingDate: utcDate(repeatDate),
+      startTime: storeDateTime(repeatDate, "09:00"),
+      endTime: storeDateTime(repeatDate, "10:30"),
+      status: BookingStatus.COMPLETED,
+      remark: "套餐卡复购演示。"
+    },
+    create: {
+      id: "booking_demo_repeat_completed",
+      userId: customer.id,
+      petId: pet.id,
+      serviceId: catBath.id,
+      bookingDate: utcDate(repeatDate),
+      startTime: storeDateTime(repeatDate, "09:00"),
+      endTime: storeDateTime(repeatDate, "10:30"),
+      status: BookingStatus.COMPLETED,
+      remark: "套餐卡复购演示。"
+    }
+  });
+
+  const order = await upsertOrder(
+    "order_demo_paid",
+    booking.id,
+    customer.id,
+    128,
+    108,
+    "STORE_PAY",
+    OrderStatus.PAID,
+    storeDateTime(recentDate, "12:00"),
+    20,
+    usedCoupon.id
+  );
+  const dogOrder = await upsertOrder(
+    "order_demo_dog_paid",
+    dogCompletedBooking.id,
+    dogCustomer.id,
+    198,
+    198,
+    "MEMBER_BALANCE",
+    OrderStatus.PAID,
+    storeDateTime(dogPaidDate, "15:10")
+  );
+  const repeatOrder = await upsertOrder(
+    "order_demo_repeat_paid",
+    repeatBooking.id,
+    customer.id,
+    128,
+    128,
+    "PACKAGE_CARD",
+    OrderStatus.PAID,
+    storeDateTime(repeatDate, "10:35")
+  );
+  const oldOrder = await upsertOrder(
+    "order_demo_old_paid",
+    oldBooking.id,
+    inactiveCustomer.id,
+    128,
+    128,
+    "MEMBER_BALANCE",
+    OrderStatus.PAID,
+    storeDateTime(inactiveDate, "10:35")
+  );
 
   await prisma.membership.upsert({
     where: { userId: customer.id },
@@ -509,9 +610,42 @@ async function main() {
     }
   });
 
-  await upsertConsumption("consumption_demo_order_paid", customer.id, order.id, 108, "ORDER_PAYMENT", "猫咪洗护到店支付，优惠 ¥20.00");
-  await upsertConsumption("consumption_demo_dog_paid", dogCustomer.id, dogOrder.id, 198, "ORDER_PAYMENT", "宠物美容护理模拟支付");
-  await upsertConsumption("consumption_demo_old_paid", inactiveCustomer.id, oldOrder.id, 128, "MEMBER_BALANCE_PAYMENT", "猫咪洗护会员余额支付");
+  await upsertConsumption(
+    "consumption_demo_order_paid",
+    customer.id,
+    order.id,
+    108,
+    "ORDER_PAYMENT",
+    "猫咪洗护到店支付，优惠 ¥20.00",
+    order.paidAt!
+  );
+  await upsertConsumption(
+    "consumption_demo_dog_paid",
+    dogCustomer.id,
+    dogOrder.id,
+    198,
+    "MEMBER_BALANCE_PAYMENT",
+    "宠物美容护理会员余额支付",
+    dogOrder.paidAt!
+  );
+  await upsertConsumption(
+    "consumption_demo_repeat_paid",
+    customer.id,
+    repeatOrder.id,
+    128,
+    "PACKAGE_CARD_PAYMENT",
+    "猫咪洗护套餐卡核销",
+    repeatOrder.paidAt!
+  );
+  await upsertConsumption(
+    "consumption_demo_old_paid",
+    inactiveCustomer.id,
+    oldOrder.id,
+    128,
+    "MEMBER_BALANCE_PAYMENT",
+    "猫咪洗护会员余额支付",
+    oldOrder.paidAt!
+  );
 
   await upsertNotification(
     "notification_booking_confirmed_demo",
@@ -620,18 +754,22 @@ async function upsertOrder(
   paidAmount: number,
   payMethod: string,
   status: OrderStatus,
+  paidAt: Date,
   discountAmount = 0,
   couponId?: string
 ) {
   return prisma.order.upsert({
-    where: { bookingId },
+    where: { id },
     update: {
+      bookingId,
+      userId,
       totalAmount,
       discountAmount,
       paidAmount,
       payMethod,
       couponId,
-      status
+      status,
+      paidAt
     },
     create: {
       id,
@@ -642,7 +780,8 @@ async function upsertOrder(
       paidAmount,
       payMethod,
       couponId,
-      status
+      status,
+      paidAt
     }
   });
 }
@@ -666,13 +805,22 @@ async function upsertUserCoupon(id: string, templateId: string, userId: string, 
   });
 }
 
-async function upsertConsumption(id: string, userId: string, orderId: string, amount: number, type: string, description: string) {
+async function upsertConsumption(
+  id: string,
+  userId: string,
+  orderId: string,
+  amount: number,
+  type: string,
+  description: string,
+  createdAt: Date
+) {
   await prisma.consumptionRecord.upsert({
     where: { id },
     update: {
       amount,
       type,
-      description
+      description,
+      createdAt
     },
     create: {
       id,
@@ -680,7 +828,8 @@ async function upsertConsumption(id: string, userId: string, orderId: string, am
       orderId,
       amount,
       type,
-      description
+      description,
+      createdAt
     }
   });
 }

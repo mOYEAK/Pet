@@ -3,10 +3,60 @@ export interface DashboardStats {
   pendingBookings: number;
   todayRevenue: number;
   newCustomers: number;
+  monthRevenue: number;
+  monthBookings: number;
+  weekTrend: StatsTrendItem[];
   popularServices: Array<{
     id: string;
     name: string;
     bookingCount: number;
+    revenue: number;
+  }>;
+  recentOrders: DashboardRecentOrder[];
+}
+
+export type StatsPeriodKey = "7d" | "30d" | "month";
+
+export interface StatsTrendItem {
+  date: string;
+  revenue: number;
+  bookingCount: number;
+  newCustomerCount: number;
+}
+
+export interface DashboardRecentOrder {
+  id: string;
+  customerName: string;
+  petName: string;
+  serviceName: string;
+  paidAmount: number;
+  payMethod: string | null;
+  status: string;
+  paidAt: string | null;
+}
+
+export interface StatsOverview {
+  period: {
+    key: StatsPeriodKey;
+    startDate: string;
+    endDate: string;
+  };
+  summary: {
+    revenue: number;
+    bookingCount: number;
+    payingCustomerCount: number;
+    repeatCustomerCount: number;
+    repeatRate: number;
+    memberConsumption: number;
+    newCustomerCount: number;
+    inactiveCustomerCount: number;
+  };
+  trend: StatsTrendItem[];
+  popularServices: Array<{
+    id: string;
+    name: string;
+    bookingCount: number;
+    revenue: number;
   }>;
 }
 
@@ -104,6 +154,7 @@ export interface Order {
   paidAmount: number;
   payMethod: string | null;
   status: string;
+  paidAt: string | null;
   createdAt: string;
   updatedAt: string;
   user?: User;
@@ -225,10 +276,13 @@ export interface BusinessAssistantResponse {
     pendingBookings: number;
     customers: number;
     memberConsumption: number;
+    repeatRate: number;
+    inactiveCustomerCount: number;
     popularServices: Array<{
       id: string;
       name: string;
       bookingCount: number;
+      revenue: number;
     }>;
   };
 }
@@ -334,6 +388,7 @@ export const api = {
       body: JSON.stringify(payload)
     }),
   dashboard: () => request<DashboardStats>("/api/stats/dashboard"),
+  statsOverview: (period: StatsPeriodKey) => request<StatsOverview>(`/api/stats/overview?period=${period}`),
   services: () => request<ServiceItem[]>("/api/services"),
   createService: (payload: ServicePayload) =>
     request<ServiceItem>("/api/services", {

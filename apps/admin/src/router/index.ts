@@ -21,6 +21,7 @@ export const router = createRouter({
   routes: [
     { path: "/login", name: "login", component: LoginView },
     { path: "/", name: "dashboard", component: DashboardView },
+    { path: "/stats", name: "stats", component: () => import("../views/StatsView.vue") },
     { path: "/bookings", name: "bookings", component: BookingsView },
     { path: "/services", name: "services", component: ServicesView },
     { path: "/customers", name: "customers", component: CustomersView },
@@ -34,8 +35,7 @@ export const router = createRouter({
     { path: "/ai-assistant", name: "ai-assistant", component: AiAssistantView },
     { path: "/marketing-assistant", name: "marketing-assistant", component: MarketingAssistantView },
     { path: "/follow-ups", name: "follow-ups", component: FollowUpsView },
-    { path: "/settings", name: "settings", component: SettingsView },
-    { path: "/stats", redirect: "/" }
+    { path: "/settings", name: "settings", component: SettingsView }
   ]
 });
 

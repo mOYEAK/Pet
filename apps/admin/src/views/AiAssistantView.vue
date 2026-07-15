@@ -38,6 +38,14 @@
               <span>会员消费</span>
               <strong>{{ formatMoney(data.memberConsumption) }}</strong>
             </div>
+            <div class="metric">
+              <span>本月复购率</span>
+              <strong>{{ data.repeatRate.toFixed(1) }}%</strong>
+            </div>
+            <div class="metric">
+              <span>60 天未消费</span>
+              <strong>{{ data.inactiveCustomerCount }}</strong>
+            </div>
           </div>
         </template>
       </div>
@@ -113,7 +121,7 @@ onMounted(() => ask(defaultQuestion));
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 16px;
 }

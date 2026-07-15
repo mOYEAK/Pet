@@ -67,6 +67,7 @@ export interface Order {
   paidAmount: number;
   payMethod: string | null;
   status: string;
+  paidAt: string | null;
   coupon?: UserCoupon | null;
 }
 

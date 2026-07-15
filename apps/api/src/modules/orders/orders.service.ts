@@ -140,6 +140,8 @@ export class OrdersService {
     }
 
     const paidOrder = await this.prisma.$transaction(async (tx) => {
+      const paidAt = new Date();
+
       if (input.payMethod === "MEMBER_BALANCE") {
         const membership = await tx.membership.findUnique({ where: { userId: order.userId } });
 
@@ -229,7 +231,8 @@ export class OrdersService {
           discountAmount,
           paidAmount,
           payMethod: input.payMethod,
-          status: OrderStatus.PAID
+          status: OrderStatus.PAID,
+          paidAt
         },
         include: this.orderInclude()
       });

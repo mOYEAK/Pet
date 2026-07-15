@@ -5,6 +5,7 @@
       <h1>宠伴管家</h1>
       <el-menu router :default-active="$route.path">
         <el-menu-item index="/">工作台</el-menu-item>
+        <el-menu-item index="/stats">经营报表</el-menu-item>
         <el-menu-item index="/bookings">预约管理</el-menu-item>
         <el-menu-item index="/services">服务项目</el-menu-item>
         <el-menu-item index="/customers">客户管理</el-menu-item>
