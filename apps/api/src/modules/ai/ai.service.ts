@@ -1,5 +1,17 @@
-import { Injectable } from "@nestjs/common";
-import { BookingStatus, OrderStatus, UserRole } from "@prisma/client";
+import {
+  runCustomerServiceAgent,
+  type AgentPet,
+  type AgentService,
+  type AgentToolRegistry,
+  type AgentToolTrace,
+  type AvailableTimeSlot,
+  type BookingDraft,
+  type CustomerServiceAgentConfig,
+  type CustomerServiceConversationMessage
+} from "@petcare/agent";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { BookingStatus, OrderStatus, PetType, Prisma, SizeType, UserRole } from "@prisma/client";
 import { serializeEntity } from "../../common/serialize";
 import { PrismaService } from "../prisma/prisma.service";
 import { BusinessAssistantDto, CustomerServiceChatDto, MarketingCopyDto } from "./dto";
@@ -13,52 +25,73 @@ const TIME_SLOTS = [
   { label: "16:30 - 18:00", start: "16:30", end: "18:00" }
 ];
 
+interface CustomerServiceResult {
+  mode: "LLM" | "RULE_FALLBACK";
+  answer: string;
+  services: AgentService[];
+  availableSlots: AvailableTimeSlot[];
+  bookingDraft?: BookingDraft;
+  toolCalls: AgentToolTrace[];
+}
+
 @Injectable()
 export class AiService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService
+  ) {}
 
   async customerService(input: CustomerServiceChatDto) {
     const message = input.message.trim();
-    const targetDate = this.resolveDate(message);
-    const [services, knowledge, availableSlots] = await Promise.all([
-      this.prisma.service.findMany({
-        where: { enabled: true },
-        orderBy: { basePrice: "asc" }
-      }),
-      this.findKnowledge(message),
-      this.getAvailableSlots(targetDate)
-    ]);
-    const answer = this.composeCustomerAnswer(message, services, knowledge, availableSlots);
 
-    await this.prisma.$transaction([
-      this.prisma.aiConversation.create({
-        data: {
-          userId: input.userId,
-          channel: "miniapp",
-          role: "user",
-          content: message
-        }
-      }),
-      this.prisma.aiConversation.create({
-        data: {
-          userId: input.userId,
-          channel: "miniapp",
-          role: "assistant",
-          content: answer,
-          toolCalls: {
-            services: services.map((service) => service.id),
-            knowledge: knowledge.map((item) => item.id),
-            availableSlots
+    if (!message) {
+      throw new BadRequestException("请输入咨询内容");
+    }
+
+    const history = await this.getConversationHistory(input.userId);
+    const agentConfig = this.getCustomerServiceAgentConfig();
+    let result: CustomerServiceResult;
+
+    if (agentConfig) {
+      try {
+        const agentResult = await runCustomerServiceAgent(
+          agentConfig,
+          this.createAgentToolRegistry(),
+          { userId: input.userId, channel: "miniapp" },
+          [...history, { role: "user", content: message }]
+        );
+        const services = [...agentResult.services];
+        if (agentResult.bookingDraft && !services.some((service) => service.id === agentResult.bookingDraft?.serviceId)) {
+          const draftService = await this.prisma.service.findUnique({ where: { id: agentResult.bookingDraft.serviceId } });
+          if (draftService) {
+            services.push(this.toAgentService(draftService));
           }
         }
-      })
-    ]);
+        result = {
+          mode: "LLM",
+          answer: agentResult.answer,
+          services,
+          availableSlots: agentResult.availableSlots,
+          bookingDraft: agentResult.bookingDraft,
+          toolCalls: agentResult.toolCalls
+        };
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "未知错误";
+        console.warn(`AI 客服调用失败，已切换规则回答：${reason}`);
+        result = await this.runRuleCustomerService(message, input.userId);
+      }
+    } else {
+      result = await this.runRuleCustomerService(message, input.userId);
+    }
+
+    await this.saveCustomerConversation(input.userId, message, result.answer, result.mode, result.toolCalls);
 
     return serializeEntity({
-      answer,
-      availableSlots,
-      services,
-      knowledge
+      answer: result.answer,
+      mode: result.mode,
+      services: result.services,
+      availableSlots: result.availableSlots,
+      bookingDraft: result.bookingDraft
     });
   }
 
@@ -129,6 +162,293 @@ export class AiService {
       services,
       availableSlots
     });
+  }
+
+  private getCustomerServiceAgentConfig(): CustomerServiceAgentConfig | null {
+    const enabled = ["1", "true", "yes"].includes((this.config.get<string>("AI_ENABLED") ?? "").toLowerCase());
+    const apiKey = this.config.get<string>("AI_API_KEY")?.trim();
+    const baseURL = this.config.get<string>("AI_BASE_URL")?.trim();
+    const model = this.config.get<string>("AI_MODEL")?.trim();
+
+    if (!enabled || !apiKey || !baseURL || !model) {
+      return null;
+    }
+
+    return { apiKey, baseURL: baseURL.replace(/\/$/, ""), model, timeoutMs: 15_000 };
+  }
+
+  private async getConversationHistory(userId?: string): Promise<CustomerServiceConversationMessage[]> {
+    if (!userId) {
+      return [];
+    }
+
+    const records = await this.prisma.aiConversation.findMany({
+      where: {
+        userId,
+        channel: "miniapp",
+        role: { in: ["user", "assistant"] }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: { role: true, content: true }
+    });
+
+    return records
+      .reverse()
+      .filter((record): record is { role: "user" | "assistant"; content: string } =>
+        record.role === "user" || record.role === "assistant"
+      )
+      .map((record) => ({ role: record.role, content: record.content }));
+  }
+
+  private createAgentToolRegistry(): AgentToolRegistry {
+    return {
+      queryKnowledgeBase: async ({ query }) => {
+        const items = await this.findKnowledge(query);
+        return items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          category: item.category
+        }));
+      },
+      getServiceList: async (input) => {
+        const where: Prisma.ServiceWhereInput = {
+          enabled: true,
+          petType: input.petType as PetType | undefined,
+          sizeType: input.sizeType as SizeType | undefined
+        };
+
+        if (input.query?.trim()) {
+          const query = input.query.trim();
+          where.OR = [
+            { name: { contains: query, mode: "insensitive" } },
+            { category: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } }
+          ];
+        }
+
+        const services = await this.prisma.service.findMany({ where, orderBy: { basePrice: "asc" } });
+        return services.map((service) => this.toAgentService(service));
+      },
+      getServicePrice: async ({ serviceId, serviceName }) => {
+        const services = await this.prisma.service.findMany({
+          where: {
+            enabled: true,
+            ...(serviceId ? { id: serviceId } : {}),
+            ...(serviceName ? { name: { contains: serviceName, mode: "insensitive" } } : {})
+          },
+          orderBy: { basePrice: "asc" },
+          take: 5
+        });
+        return services.map((service) => this.toAgentService(service));
+      },
+      getAvailableTimeSlots: async ({ date, serviceId }) => {
+        this.assertDateKey(date);
+        if (serviceId) {
+          const service = await this.prisma.service.findFirst({ where: { id: serviceId, enabled: true }, select: { id: true } });
+          if (!service) {
+            throw new BadRequestException("服务项目不存在或已停用");
+          }
+        }
+        return this.getAvailableSlots(date);
+      },
+      getCustomerPets: async (context) => {
+        if (!context.userId) {
+          return [];
+        }
+        const pets = await this.prisma.pet.findMany({ where: { userId: context.userId }, orderBy: { createdAt: "asc" } });
+        return pets.map((pet): AgentPet => ({
+          id: pet.id,
+          name: pet.name,
+          type: pet.type,
+          breed: pet.breed,
+          notes: pet.notes
+        }));
+      },
+      createBookingDraft: (draft, context) => this.validateBookingDraft(draft, context.userId)
+    };
+  }
+
+  private async runRuleCustomerService(message: string, userId?: string): Promise<CustomerServiceResult> {
+    const targetDate = this.resolveDate(message);
+    const [services, knowledge, availableSlots] = await Promise.all([
+      this.prisma.service.findMany({
+        where: { enabled: true },
+        orderBy: { basePrice: "asc" }
+      }),
+      this.findKnowledge(message),
+      this.getAvailableSlots(targetDate)
+    ]);
+    const bookingDraft = await this.createRuleBookingDraft(message, userId, services);
+    const matchedServices = this.matchServices(message, services);
+    const displayServices = matchedServices.length > 0 ? matchedServices : services.slice(0, 3);
+    const answer = [
+      this.composeCustomerAnswer(message, services, knowledge, availableSlots),
+      bookingDraft ? "我已经整理好预约草案，请核对宠物、服务和时间后再提交。" : ""
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return {
+      mode: "RULE_FALLBACK",
+      answer,
+      services: displayServices.map((service) => this.toAgentService(service)),
+      availableSlots,
+      bookingDraft,
+      toolCalls: [
+        {
+          name: "ruleFallback",
+          input: { message, targetDate },
+          output: {
+            serviceIds: services.map((service) => service.id),
+            knowledgeIds: knowledge.map((item) => item.id),
+            availableSlots,
+            bookingDraft
+          }
+        }
+      ]
+    };
+  }
+
+  private async saveCustomerConversation(
+    userId: string | undefined,
+    message: string,
+    answer: string,
+    mode: CustomerServiceResult["mode"],
+    toolCalls: AgentToolTrace[]
+  ) {
+    await this.prisma.$transaction([
+      this.prisma.aiConversation.create({
+        data: { userId, channel: "miniapp", role: "user", content: message }
+      }),
+      this.prisma.aiConversation.create({
+        data: {
+          userId,
+          channel: "miniapp",
+          role: "assistant",
+          content: answer,
+          toolCalls: { mode, calls: toolCalls } as unknown as Prisma.InputJsonValue
+        }
+      })
+    ]);
+  }
+
+  private async validateBookingDraft(draft: BookingDraft, userId?: string) {
+    const errors: string[] = [];
+
+    if (!userId) {
+      return { valid: false, errors: ["请先登录后再生成预约草案"] };
+    }
+
+    this.assertDateKey(draft.bookingDate);
+    const slot = TIME_SLOTS.find((item) => item.start === draft.startTime && item.end === draft.endTime);
+    if (!slot) {
+      errors.push("请选择门店提供的固定预约时间段");
+    }
+
+    const [pet, service] = await Promise.all([
+      this.prisma.pet.findUnique({ where: { id: draft.petId } }),
+      this.prisma.service.findUnique({ where: { id: draft.serviceId } })
+    ]);
+
+    if (!pet || pet.userId !== userId) {
+      errors.push("宠物不属于当前客户");
+    }
+    if (!service || !service.enabled) {
+      errors.push("服务项目不存在或已停用");
+    }
+    if (pet && service && service.petType !== PetType.OTHER && service.petType !== pet.type) {
+      errors.push("该服务不适用于所选宠物类型");
+    }
+
+    const startTime = this.parseShanghaiDateTime(draft.bookingDate, draft.startTime);
+    if (startTime <= new Date()) {
+      errors.push("预约时间必须晚于当前时间");
+    }
+
+    if (slot) {
+      const availableSlots = await this.getAvailableSlots(draft.bookingDate);
+      if (!availableSlots.some((item) => item.startTime === draft.startTime && item.endTime === draft.endTime)) {
+        errors.push("所选时间段已被预约");
+      }
+    }
+
+    if (errors.length > 0) {
+      return { valid: false, errors };
+    }
+
+    return {
+      valid: true,
+      errors: [],
+      draft: {
+        petId: draft.petId,
+        serviceId: draft.serviceId,
+        bookingDate: draft.bookingDate,
+        startTime: draft.startTime,
+        endTime: draft.endTime,
+        remark: draft.remark?.trim() || undefined
+      }
+    };
+  }
+
+  private async createRuleBookingDraft(
+    message: string,
+    userId: string | undefined,
+    services: Awaited<ReturnType<PrismaService["service"]["findMany"]>>
+  ): Promise<BookingDraft | undefined> {
+    if (!userId || !/预约|约一下|帮.*约/.test(message)) {
+      return undefined;
+    }
+
+    const [pets, startTime] = await Promise.all([
+      this.prisma.pet.findMany({ where: { userId }, orderBy: { createdAt: "asc" } }),
+      Promise.resolve(this.extractRequestedTime(message))
+    ]);
+    const pet = pets.find((item) => message.includes(item.name));
+    const service = this.matchServices(message, services)[0];
+    const slot = TIME_SLOTS.find((item) => item.start === startTime);
+
+    if (!pet || !service || !slot) {
+      return undefined;
+    }
+
+    const result = await this.validateBookingDraft(
+      {
+        petId: pet.id,
+        serviceId: service.id,
+        bookingDate: this.resolveDate(message),
+        startTime: slot.start,
+        endTime: slot.end,
+        remark: pet.notes ?? undefined
+      },
+      userId
+    );
+    return result.valid ? result.draft : undefined;
+  }
+
+  private toAgentService(service: {
+    id: string;
+    name: string;
+    category: string;
+    petType: PetType;
+    sizeType: SizeType;
+    basePrice: { toNumber(): number };
+    durationMinutes: number;
+    description: string | null;
+    notice: string | null;
+  }): AgentService {
+    return {
+      id: service.id,
+      name: service.name,
+      category: service.category,
+      petType: service.petType,
+      sizeType: service.sizeType,
+      basePrice: service.basePrice.toNumber(),
+      durationMinutes: service.durationMinutes,
+      description: service.description,
+      notice: service.notice
+    };
   }
 
   private async getBusinessData() {
@@ -215,7 +535,9 @@ export class AiService {
     });
     const occupied = new Set(booked.map((booking) => this.formatShanghaiTime(booking.startTime)));
 
-    return TIME_SLOTS.filter((slot) => !occupied.has(slot.start)).map((slot) => ({
+    return TIME_SLOTS.filter(
+      (slot) => !occupied.has(slot.start) && this.parseShanghaiDateTime(date, slot.start) > new Date()
+    ).map((slot) => ({
       date,
       startTime: slot.start,
       endTime: slot.end
@@ -237,7 +559,7 @@ export class AiService {
         .join("；")}。`,
       availableSlots.length > 0
         ? `可选时间段：${availableSlots.map((slot) => `${slot.date} ${slot.startTime}-${slot.endTime}`).join("、")}。`
-        : "这一天固定时间段已经约满，建议换一天或联系门店人工确认。"
+        : "这一天暂时没有可约时间段，可能已经约满或营业时间已过，建议换一天或联系门店人工确认。"
     ];
 
     if (wantsNotice && knowledge.length > 0) {
@@ -267,17 +589,26 @@ export class AiService {
   }
 
   private matchServices(message: string, services: Awaited<ReturnType<PrismaService["service"]["findMany"]>>) {
-    return services.filter(
-      (service) =>
-        message.includes(service.name) ||
-        message.includes(service.category) ||
-        message.includes(service.petType === "CAT" ? "猫" : "狗") ||
-        message.toLowerCase().includes(service.petType.toLowerCase())
-    );
+    const nameMatches = services.filter((service) => message.includes(service.name));
+    if (nameMatches.length > 0) {
+      return nameMatches;
+    }
+
+    const categoryMatches = services.filter((service) => message.includes(service.category));
+    if (categoryMatches.length > 0) {
+      return categoryMatches;
+    }
+
+    return services.filter((service) => {
+      const petKeyword = service.petType === PetType.CAT ? "猫" : service.petType === PetType.DOG ? "狗" : "宠物";
+      return message.includes(petKeyword) || message.toLowerCase().includes(service.petType.toLowerCase());
+    });
   }
 
   private extractKeywords(message: string) {
-    return ["预约", "规则", "注意", "吹风", "洗护", "美容", "寄养", "价格"].filter((keyword) => message.includes(keyword));
+    return ["预约", "规则", "注意", "吹风", "洗护", "美容", "寄养", "价格", "套餐卡", "优惠券", "活动"].filter(
+      (keyword) => message.includes(keyword)
+    );
   }
 
   private resolveDate(message: string) {
@@ -289,6 +620,42 @@ export class AiService {
 
   private parseDateOnly(date: string) {
     return new Date(`${date}T00:00:00.000Z`);
+  }
+
+  private assertDateKey(date: string) {
+    const parsed = this.parseDateOnly(date);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+      throw new BadRequestException("日期必须使用 YYYY-MM-DD 格式");
+    }
+  }
+
+  private parseShanghaiDateTime(date: string, time: string) {
+    const [year, month, day] = date.split("-").map(Number);
+    const [hour, minute] = time.split(":").map(Number);
+    return new Date(Date.UTC(year, month - 1, day, hour - 8, minute, 0, 0));
+  }
+
+  private extractRequestedTime(message: string) {
+    const clockTime = message.match(/(?:^|\D)([01]?\d|2[0-3]):([0-5]\d)(?:\D|$)/);
+    if (clockTime) {
+      return `${clockTime[1].padStart(2, "0")}:${clockTime[2]}`;
+    }
+
+    const chineseTime = message.match(/(上午|中午|下午|晚上)?\s*(\d{1,2})\s*点(半)?/);
+    if (!chineseTime) {
+      return undefined;
+    }
+
+    const period = chineseTime[1];
+    let hour = Number(chineseTime[2]);
+    if ((period === "下午" || period === "晚上") && hour < 12) {
+      hour += 12;
+    }
+    if (period === "中午" && hour < 11) {
+      hour += 12;
+    }
+    const minute = chineseTime[3] ? "30" : "00";
+    return `${String(hour).padStart(2, "0")}:${minute}`;
   }
 
   private formatShanghaiTime(value: Date) {

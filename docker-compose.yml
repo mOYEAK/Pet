@@ -32,6 +32,10 @@ services:
       API_PORT: 3000
       DATABASE_URL: postgresql://petcare:petcare@postgres:5432/petcare?schema=public
       REDIS_URL: redis://redis:6379
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_MODEL: ${AI_MODEL:-gpt-4.1-mini}
     depends_on:
       - postgres
       - redis

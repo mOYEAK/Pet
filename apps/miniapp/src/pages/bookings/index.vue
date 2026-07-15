@@ -56,9 +56,10 @@
 </template>
 
 <script setup lang="ts">
+import { onShow } from "@dcloudio/uni-app";
 import { computed, onMounted, reactive, ref } from "vue";
 import PageNav from "../../components/PageNav.vue";
-import { api, getCurrentUser, type Booking, type Pet, type ServiceItem, type User } from "../../api/client";
+import { api, getCurrentUser, type Booking, type BookingDraft, type Pet, type ServiceItem, type User } from "../../api/client";
 import { formatDateTime, formatMoney } from "../../utils/format";
 import { bookingStatusText, orderStatusText, payMethodText } from "../../utils/status";
 
@@ -142,6 +143,22 @@ function applySelectedService() {
   }
 }
 
+function applyBookingDraft() {
+  const draft = uni.getStorageSync("bookingDraft") as BookingDraft | undefined;
+  if (!draft || !pets.value.some((pet) => pet.id === draft.petId) || !services.value.some((service) => service.id === draft.serviceId)) {
+    return;
+  }
+
+  form.petId = draft.petId;
+  form.serviceId = draft.serviceId;
+  form.bookingDate = draft.bookingDate;
+  form.startTime = draft.startTime;
+  form.endTime = draft.endTime;
+  form.remark = draft.remark ?? "";
+  uni.removeStorageSync("bookingDraft");
+  uni.showToast({ title: "已填入预约草案", icon: "none" });
+}
+
 async function load() {
   loading.value = true;
   try {
@@ -157,6 +174,7 @@ async function load() {
     form.petId ||= pets.value[0]?.id ?? "";
     form.serviceId ||= services.value[0]?.id ?? "";
     applySelectedService();
+    applyBookingDraft();
   } catch (error) {
     uni.showToast({
       title: error instanceof Error ? error.message : "预约数据加载失败",
@@ -224,6 +242,11 @@ async function cancelBooking(id: string) {
 }
 
 onMounted(load);
+onShow(() => {
+  if (pets.value.length > 0 && services.value.length > 0) {
+    applyBookingDraft();
+  }
+});
 </script>
 
 <style scoped>

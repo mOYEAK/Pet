@@ -10,6 +10,7 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
+      "@petcare/agent": ["../../packages/agent/dist"],
       "@petcare/shared": ["../../packages/shared/dist"]
     }
   },

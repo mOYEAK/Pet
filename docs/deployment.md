@@ -14,6 +14,8 @@
 
 ## 首次启动
 
+默认不需要模型密钥，客服使用本地规则降级。若要启用真实模型，在根目录 `.env` 配置 `AI_ENABLED=true`、`AI_API_KEY`、`AI_BASE_URL` 和 `AI_MODEL`，Compose 会将其传入 API 容器。
+
 ```bash
 docker compose up -d postgres redis
 pnpm --filter @petcare/api prisma:generate
@@ -50,7 +52,7 @@ docker compose down -v
 
 ## 验收路线
 
-1. 打开 `http://localhost:8080`，查看门店信息、活动入口、服务筛选、宠物档案、预约记录、会员套餐卡和智能客服。
+1. 打开 `http://localhost:8080`，在智能客服输入“帮咪咪预约明天下午3点的猫咪洗护”，查看草案并回填预约页。
 2. 打开 `http://localhost:8080/admin/`，使用管理员手机号登录。
 3. 在后台确认预约，生成订单。
 4. 在订单页使用到店支付、会员余额或套餐卡核销完成支付。
@@ -71,4 +73,4 @@ docker compose down -v
 - 微信订阅消息或短信通知。
 - 多门店 SaaS 和复杂 RBAC。
 - 复杂优惠券规则和用户主动领券。
-- 真实 LLM、向量检索和 pgvector。
+- embedding、向量检索和 pgvector。

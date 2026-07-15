@@ -11,6 +11,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@petcare/shared": "workspace:*"
+    "@ai-sdk/openai-compatible": "2.0.59",
+    "@petcare/shared": "workspace:*",
+    "ai": "6.0.224",
+    "zod": "4.4.3"
   }
 }

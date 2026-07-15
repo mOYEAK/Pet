@@ -10,7 +10,7 @@ petcare-system/
     api/        NestJS + Prisma 后端服务
   packages/
     shared/     共享业务类型、枚举和工具
-    agent/      AI 提示词和工具契约预留
+    agent/      AI SDK 客服 Agent、提示词和工具契约
   docs/         项目文档与演示材料
 ```
 
@@ -34,6 +34,7 @@ petcare-system/
 
 - 知识库管理
 - 用户端 AI 客服
+- 真实模型工具调用、会话上下文、预约草案和规则降级
 - 后台 AI 经营助手
 - 客户召回和跟进任务
 - 营销文案和优惠活动草案
@@ -43,7 +44,7 @@ petcare-system/
 
 - 真实微信支付、短信、微信订阅通知
 - 多门店 SaaS 和复杂 RBAC
-- 真实大模型、向量检索和 pgvector
+- embedding、向量检索和 pgvector
 - 复杂优惠券规则和用户主动领券
 
 ## 后端模块
@@ -56,7 +57,7 @@ petcare-system/
 - `orders`: 支付记录、订单状态、会员余额和套餐卡核销
 - `memberships`: 余额、积分、套餐卡和消费记录
 - `stats`: 工作台统计
-- `ai`: 用户客服、经营分析、营销文案的规则型 Agent
+- `ai`: 真实模型/规则降级客服、经营分析和营销文案
 - `knowledge-base`: 智能客服知识库
 - `follow-up`: 流失客户筛选和跟进任务
 - `settings`: 单门店基础设置

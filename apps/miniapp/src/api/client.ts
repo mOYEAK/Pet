@@ -134,14 +134,27 @@ export interface StoreSettings {
   notice: string;
 }
 
+export interface AvailableTimeSlot {
+  date: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface BookingDraft {
+  petId: string;
+  serviceId: string;
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+  remark?: string;
+}
+
 export interface AiCustomerServiceResponse {
   answer: string;
-  availableSlots: Array<{
-    date: string;
-    startTime: string;
-    endTime: string;
-  }>;
+  mode: "LLM" | "RULE_FALLBACK";
+  availableSlots: AvailableTimeSlot[];
   services: ServiceItem[];
+  bookingDraft?: BookingDraft;
 }
 
 export interface CreatePetPayload {
