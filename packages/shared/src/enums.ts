@@ -55,5 +55,6 @@ export enum NotificationType {
   BookingCreated = "BOOKING_CREATED",
   BookingConfirmed = "BOOKING_CONFIRMED",
   BookingCancelled = "BOOKING_CANCELLED",
+  BookingReminder = "BOOKING_REMINDER",
   OrderPaid = "ORDER_PAID"
 }

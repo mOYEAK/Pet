@@ -39,6 +39,7 @@ export const notificationTypeText: Record<string, string> = {
   BOOKING_CREATED: "预约提交",
   BOOKING_CONFIRMED: "预约确认",
   BOOKING_CANCELLED: "预约取消",
+  BOOKING_REMINDER: "到店提醒",
   ORDER_PAID: "订单支付"
 };
 

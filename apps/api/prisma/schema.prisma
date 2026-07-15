@@ -64,6 +64,7 @@ enum NotificationType {
   BOOKING_CREATED
   BOOKING_CONFIRMED
   BOOKING_CANCELLED
+  BOOKING_REMINDER
   ORDER_PAID
 }
 
@@ -130,24 +131,26 @@ model Service {
 }
 
 model Booking {
-  id          String        @id @default(cuid())
-  userId      String        @map("user_id")
-  petId       String        @map("pet_id")
-  serviceId   String        @map("service_id")
-  bookingDate DateTime      @map("booking_date") @db.Date
-  startTime   DateTime      @map("start_time")
-  endTime     DateTime      @map("end_time")
-  status      BookingStatus @default(PENDING)
-  remark      String?
-  user        User          @relation(fields: [userId], references: [id])
-  pet         Pet           @relation(fields: [petId], references: [id])
-  service     Service       @relation(fields: [serviceId], references: [id])
-  order       Order?
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  id             String        @id @default(cuid())
+  userId         String        @map("user_id")
+  petId          String        @map("pet_id")
+  serviceId      String        @map("service_id")
+  bookingDate    DateTime      @map("booking_date") @db.Date
+  startTime      DateTime      @map("start_time")
+  endTime        DateTime      @map("end_time")
+  status         BookingStatus @default(PENDING)
+  remark         String?
+  reminderSentAt DateTime?     @map("reminder_sent_at")
+  user           User          @relation(fields: [userId], references: [id])
+  pet            Pet           @relation(fields: [petId], references: [id])
+  service        Service       @relation(fields: [serviceId], references: [id])
+  order          Order?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
 
   @@index([bookingDate, startTime, endTime])
   @@index([status])
+  @@index([status, startTime, reminderSentAt])
   @@map("bookings")
 }
 

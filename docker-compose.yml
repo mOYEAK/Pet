@@ -32,6 +32,8 @@ services:
       API_PORT: 3000
       DATABASE_URL: postgresql://petcare:petcare@postgres:5432/petcare?schema=public
       REDIS_URL: redis://redis:6379
+      BOOKING_REMINDER_ENABLED: ${BOOKING_REMINDER_ENABLED:-true}
+      BOOKING_REMINDER_HOURS: ${BOOKING_REMINDER_HOURS:-24}
       AI_ENABLED: ${AI_ENABLED:-false}
       AI_API_KEY: ${AI_API_KEY:-}
       AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}

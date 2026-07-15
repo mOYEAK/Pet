@@ -4,7 +4,7 @@
     <view class="page-header">
       <view>
         <text class="title">通知中心</text>
-        <text class="subtitle">查看预约状态和订单支付提醒。</text>
+        <text class="subtitle">查看预约状态、到店和订单支付提醒。</text>
       </view>
       <button class="plain-button" :disabled="markingAll || unreadCount === 0" @click="markAllRead">
         {{ markingAll ? "处理中" : "全部已读" }}

@@ -23,6 +23,12 @@ function storeDateTime(date: string, time: string) {
   return new Date(Date.UTC(year, month - 1, day, hour - 8, minute, 0, 0));
 }
 
+function shanghaiDateKeyWithOffset(days: number) {
+  const shanghaiNow = new Date(Date.now() + 8 * 60 * 60 * 1000);
+  shanghaiNow.setUTCDate(shanghaiNow.getUTCDate() + days);
+  return shanghaiNow.toISOString().slice(0, 10);
+}
+
 async function main() {
   const admin = await prisma.user.upsert({
     where: { phone: "19900000000" },
@@ -292,6 +298,34 @@ async function main() {
     }
   });
 
+  const reminderBookingDate = shanghaiDateKeyWithOffset(1);
+  const reminderBooking = await prisma.booking.upsert({
+    where: { id: "booking_demo_upcoming_reminder" },
+    update: {
+      userId: customer.id,
+      petId: pet.id,
+      serviceId: catBath.id,
+      bookingDate: utcDate(reminderBookingDate),
+      startTime: storeDateTime(reminderBookingDate, "10:30"),
+      endTime: storeDateTime(reminderBookingDate, "12:00"),
+      status: BookingStatus.CONFIRMED,
+      remark: "演示预约前自动提醒。",
+      reminderSentAt: new Date()
+    },
+    create: {
+      id: "booking_demo_upcoming_reminder",
+      userId: customer.id,
+      petId: pet.id,
+      serviceId: catBath.id,
+      bookingDate: utcDate(reminderBookingDate),
+      startTime: storeDateTime(reminderBookingDate, "10:30"),
+      endTime: storeDateTime(reminderBookingDate, "12:00"),
+      status: BookingStatus.CONFIRMED,
+      remark: "演示预约前自动提醒。",
+      reminderSentAt: new Date()
+    }
+  });
+
   const pendingBooking = await prisma.booking.upsert({
     where: { id: "booking_demo_pending" },
     update: {
@@ -434,6 +468,16 @@ async function main() {
     NotificationType.BOOKING_CONFIRMED,
     "booking",
     booking.id,
+    false
+  );
+  await upsertNotification(
+    "notification_booking_reminder_demo",
+    customer.id,
+    "预约到店提醒",
+    `您预约的猫咪洗护将于 ${reminderBookingDate} 10:30 开始，服务宠物：咪咪。请提前 10 分钟到店，如需改期请联系门店。`,
+    NotificationType.BOOKING_REMINDER,
+    "booking",
+    reminderBooking.id,
     false
   );
   await upsertNotification(
