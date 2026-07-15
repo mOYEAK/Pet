@@ -77,6 +77,10 @@ export class BookingsService {
     const status = (input.status ?? BookingStatus.PENDING) as BookingStatus;
 
     if (status !== BookingStatus.CANCELLED) {
+      if (startTime <= new Date()) {
+        throw new BadRequestException("预约开始时间必须晚于当前时间");
+      }
+
       await this.assertNoTimeConflict(startTime, endTime);
     }
 
@@ -99,14 +103,23 @@ export class BookingsService {
       }
     });
 
-    await this.createNotificationSafely({
-      userId: booking.userId,
-      title: "预约已提交",
-      content: `${booking.service.name} 预约已提交，门店确认后会更新状态。`,
-      type: NotificationType.BOOKING_CREATED,
-      relatedType: "booking",
-      relatedId: booking.id
-    });
+    const notification =
+      booking.status === BookingStatus.PENDING
+        ? {
+            title: "预约已提交",
+            content: `${booking.service.name} 预约已提交，门店确认后会更新状态。`,
+            type: NotificationType.BOOKING_CREATED
+          }
+        : this.resolveStatusNotification(booking);
+
+    if (notification) {
+      await this.createNotificationSafely({
+        userId: booking.userId,
+        ...notification,
+        relatedType: "booking",
+        relatedId: booking.id
+      });
+    }
 
     return serializeEntity(booking);
   }

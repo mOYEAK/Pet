@@ -83,6 +83,17 @@ export interface Booking {
   order?: Order | null;
 }
 
+export interface CreateBookingPayload {
+  userId: string;
+  petId: string;
+  serviceId: string;
+  bookingDate: string;
+  startTime: string;
+  endTime?: string;
+  remark?: string;
+  status?: string;
+}
+
 export interface Order {
   id: string;
   bookingId: string;
@@ -340,6 +351,11 @@ export const api = {
       body: JSON.stringify({ enabled })
     }),
   bookings: () => request<Booking[]>("/api/bookings"),
+  createBooking: (payload: CreateBookingPayload) =>
+    request<Booking>("/api/bookings", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
   updateBookingStatus: (id: string, status: string) =>
     request<Booking>(`/api/bookings/${id}/status`, {
       method: "PATCH",

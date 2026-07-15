@@ -327,6 +327,33 @@ async function main() {
     }
   });
 
+  const manualBooking = await prisma.booking.upsert({
+    where: { id: "booking_demo_manual_confirmed" },
+    update: {
+      userId: dogCustomer.id,
+      petId: dog.id,
+      serviceId: dogBath.id,
+      bookingDate: utcDate(reminderBookingDate),
+      startTime: storeDateTime(reminderBookingDate, "15:00"),
+      endTime: storeDateTime(reminderBookingDate, "16:30"),
+      status: BookingStatus.CONFIRMED,
+      remark: "后台手工预约演示，客户通过电话预约。",
+      reminderSentAt: new Date()
+    },
+    create: {
+      id: "booking_demo_manual_confirmed",
+      userId: dogCustomer.id,
+      petId: dog.id,
+      serviceId: dogBath.id,
+      bookingDate: utcDate(reminderBookingDate),
+      startTime: storeDateTime(reminderBookingDate, "15:00"),
+      endTime: storeDateTime(reminderBookingDate, "16:30"),
+      status: BookingStatus.CONFIRMED,
+      remark: "后台手工预约演示，客户通过电话预约。",
+      reminderSentAt: new Date()
+    }
+  });
+
   const pendingBooking = await prisma.booking.upsert({
     where: { id: "booking_demo_pending" },
     update: {
@@ -504,6 +531,16 @@ async function main() {
     NotificationType.BOOKING_REMINDER,
     "booking",
     reminderBooking.id,
+    false
+  );
+  await upsertNotification(
+    "notification_manual_booking_confirmed_demo",
+    dogCustomer.id,
+    "预约已确认",
+    `小型犬洗护预约已确认，到店时间为 ${reminderBookingDate} 15:00。`,
+    NotificationType.BOOKING_CONFIRMED,
+    "booking",
+    manualBooking.id,
     false
   );
   await upsertNotification(
