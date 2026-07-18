@@ -296,7 +296,7 @@ export class OrdersService {
       throw new BadRequestException("优惠券模板已停用");
     }
 
-    const today = this.parseDateOnly(new Date().toISOString().slice(0, 10));
+    const today = this.parseDateOnly(this.shanghaiDateKey(new Date()));
 
     if (coupon.template.startDate && today.getTime() < coupon.template.startDate.getTime()) {
       throw new BadRequestException("优惠券尚未生效");
@@ -315,6 +315,15 @@ export class OrdersService {
 
   private parseDateOnly(date: string) {
     return new Date(`${date}T00:00:00.000Z`);
+  }
+
+  private shanghaiDateKey(date: Date) {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(date);
   }
 
   private async createNotificationSafely(input: Parameters<NotificationsService["create"]>[0]) {

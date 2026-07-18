@@ -11,6 +11,8 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
+    "test:api": "node scripts/run-api-tests.mjs",
+    "test:api:coverage": "node scripts/run-api-tests.mjs --coverage",
     "docker:build": "docker compose --profile app build",
     "docker:up": "docker compose --profile app up -d",
     "docker:down": "docker compose --profile app down",

@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @petcare/api prisma:generate
+
+      - name: API integration tests with coverage
+        run: pnpm test:api:coverage
+
+      - name: Typecheck workspace
+        run: pnpm typecheck
+
+      - name: Build API
+        run: pnpm --filter @petcare/api build
+
+      - name: Build admin
+        run: pnpm --filter @petcare/admin build
+
+      - name: Build miniapp H5
+        run: pnpm --filter @petcare/miniapp build:h5
+
+      - name: Upload API coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: apps/api/coverage
+          if-no-files-found: warn
+          retention-days: 14

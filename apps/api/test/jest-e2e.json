@@ -1,0 +1,25 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testTimeout": 30000,
+  "testRegex": "test/.*\\.e2e-spec\\.ts$",
+  "setupFiles": ["<rootDir>/test/setup-env.ts"],
+  "transform": {
+    "^.+\\.ts$": [
+      "ts-jest",
+      {
+        "tsconfig": "test/tsconfig.json",
+        "diagnostics": false
+      }
+    ]
+  },
+  "collectCoverageFrom": [
+    "src/modules/**/*.service.ts",
+    "!src/modules/prisma/prisma.service.ts"
+  ],
+  "coverageDirectory": "coverage",
+  "coverageReporters": ["text", "lcov", "json-summary"],
+  "clearMocks": true,
+  "restoreMocks": true
+}
