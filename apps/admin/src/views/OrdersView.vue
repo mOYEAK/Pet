@@ -42,7 +42,7 @@
       </el-table-column>
       <el-table-column label="操作" width="120" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" :disabled="row.status === 'PAID' || row.status === 'COMPLETED'" @click="openPay(row)">
+          <el-button link type="primary" :data-testid="`order-pay-${row.id}`" :disabled="row.status === 'PAID' || row.status === 'COMPLETED'" @click="openPay(row)">
             标记支付
           </el-button>
         </template>
@@ -74,7 +74,7 @@
           <p v-if="!usablePackageCards.length" class="form-tip">该客户暂无匹配当前服务的可用套餐卡。</p>
         </el-form-item>
         <el-form-item v-else label="优惠券">
-          <el-select v-model="payForm.couponId" clearable placeholder="不使用优惠券" :loading="loadingCoupons">
+          <el-select v-model="payForm.couponId" data-testid="payment-coupon" clearable placeholder="不使用优惠券" :loading="loadingCoupons">
             <el-option
               v-for="coupon in usableCoupons"
               :key="coupon.id"
@@ -99,7 +99,7 @@
       </el-form>
       <template #footer>
         <el-button @click="payDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="paying" @click="pay">确认支付</el-button>
+        <el-button type="primary" data-testid="payment-confirm" :loading="paying" @click="pay">确认支付</el-button>
       </template>
     </el-dialog>
   </section>

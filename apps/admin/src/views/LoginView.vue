@@ -13,7 +13,7 @@
         <el-form-item label="管理员名称">
           <el-input v-model="form.nickname" placeholder="门店管理员" />
         </el-form-item>
-        <el-button type="primary" class="login-button" :loading="loading" @click="login">登录后台</el-button>
+        <el-button type="primary" class="login-button" data-testid="admin-login-submit" :loading="loading" @click="login">登录后台</el-button>
       </el-form>
 
       <p class="hint">演示账号：19900000000</p>

@@ -60,6 +60,7 @@ GitHub Actions 工作流位于 `.github/workflows/ci.yml`，在 push 到 `main` 
 
 - 安装锁定依赖并生成 Prisma Client。
 - 运行真实 PostgreSQL API 集成测试和覆盖率。
+- 运行 Playwright 完整预约支付浏览器 E2E。
 - 执行全仓 typecheck。
 - 构建 API、后台和 C 端 H5。
 - 上传 `api-coverage` artifact，保留 14 天。

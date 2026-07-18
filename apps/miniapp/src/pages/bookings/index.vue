@@ -9,19 +9,19 @@
     <view class="form-card">
       <text class="section-title">创建预约</text>
       <picker :range="petOptions" range-key="label" @change="onPetChange">
-        <view class="field picker-field">宠物：{{ selectedPetLabel }}</view>
+        <view class="field picker-field" data-testid="booking-pet">宠物：{{ selectedPetLabel }}</view>
       </picker>
       <picker :range="serviceOptions" range-key="label" @change="onServiceChange">
-        <view class="field picker-field">服务：{{ selectedServiceLabel }}</view>
+        <view class="field picker-field" data-testid="booking-service">服务：{{ selectedServiceLabel }}</view>
       </picker>
       <picker mode="date" :value="form.bookingDate" @change="onDateChange">
-        <view class="field picker-field">到店日期：{{ form.bookingDate }}</view>
+        <view class="field picker-field" data-testid="booking-date">到店日期：{{ form.bookingDate }}</view>
       </picker>
       <picker :range="timeSlotOptions" range-key="label" @change="onTimeChange">
-        <view class="field picker-field">预约时间：{{ selectedTimeSlotLabel }}</view>
+        <view class="field picker-field" data-testid="booking-time">预约时间：{{ selectedTimeSlotLabel }}</view>
       </picker>
-      <textarea v-model="form.remark" class="textarea" placeholder="备注，例如宠物特殊情况" />
-      <button class="primary-button" :disabled="submitting" @click="createBooking">
+      <textarea v-model="form.remark" class="textarea" data-testid="booking-remark" placeholder="备注，例如宠物特殊情况" />
+      <button class="primary-button" data-testid="booking-submit" :disabled="submitting" @click="createBooking">
         {{ submitting ? "提交中..." : "提交预约" }}
       </button>
     </view>
@@ -34,7 +34,7 @@
       <view v-if="loading" class="empty">正在加载预约...</view>
       <view v-else-if="bookings.length === 0" class="empty">暂无预约记录</view>
       <view v-else class="list">
-        <view v-for="booking in bookings" :key="booking.id" class="booking-card">
+        <view v-for="booking in bookings" :key="booking.id" class="booking-card" :data-testid="`booking-card-${booking.id}`">
           <view class="row">
             <text class="card-title">{{ booking.service?.name ?? "服务项目" }}</text>
             <text class="status">{{ bookingStatusText[booking.status] ?? booking.status }}</text>

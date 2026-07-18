@@ -40,7 +40,7 @@
           <el-table-column label="备注" prop="remark" min-width="180" show-overflow-tooltip />
           <el-table-column label="操作" width="370" fixed="right">
             <template #default="{ row }">
-              <el-button link type="primary" :disabled="row.status === 'CONFIRMED'" @click="setStatus(row.id, 'CONFIRMED')">
+              <el-button link type="primary" :data-testid="`booking-confirm-${row.id}`" :disabled="row.status === 'CONFIRMED'" @click="setStatus(row.id, 'CONFIRMED')">
                 确认
               </el-button>
               <el-button link type="success" :disabled="row.status === 'SERVING'" @click="setStatus(row.id, 'SERVING')">
@@ -49,7 +49,7 @@
               <el-button link type="info" :disabled="row.status === 'COMPLETED'" @click="setStatus(row.id, 'COMPLETED')">
                 完成
               </el-button>
-              <el-button link type="warning" :disabled="Boolean(row.order) || row.status === 'CANCELLED'" @click="createOrder(row)">
+              <el-button link type="warning" :data-testid="`booking-create-order-${row.id}`" :disabled="Boolean(row.order) || row.status === 'CANCELLED'" @click="createOrder(row)">
                 生成订单
               </el-button>
               <el-button link type="danger" :disabled="row.status === 'CANCELLED'" @click="cancel(row.id)">取消</el-button>

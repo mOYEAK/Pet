@@ -1,5 +1,7 @@
 # 宠伴管家
 
+[![CI](https://github.com/mOYEAK/Pet/actions/workflows/ci.yml/badge.svg)](https://github.com/mOYEAK/Pet/actions/workflows/ci.yml)
+
 宠伴管家是一个面向单门店宠物洗护场景的预约、会员、订单、客户、宠物档案和 AI 经营辅助系统。
 
 ## 项目结构
@@ -99,6 +101,11 @@ AI_MODEL="gpt-4.1-mini"
 ## 常用验证命令
 
 ```bash
+pnpm test:api
+pnpm test:api:coverage
+pnpm exec playwright install chromium
+pnpm test:e2e
+pnpm typecheck
 pnpm --filter @petcare/api typecheck
 pnpm --filter @petcare/admin typecheck
 pnpm --filter @petcare/miniapp typecheck
@@ -107,5 +114,10 @@ pnpm --filter @petcare/admin build
 pnpm --filter @petcare/miniapp build:h5
 ```
 
+`pnpm test:api` 和 `pnpm test:e2e` 都只使用 `127.0.0.1:5433/petcare_test` 隔离测试库，并在结束后清理测试容器，不会操作 `5432/petcare` 演示库。GitHub Actions 会执行 API 覆盖率、Playwright 预约支付闭环、全仓 typecheck 和三端生产构建。
+
 更多结构说明见 [docs/project-structure.md](docs/project-structure.md)，完整功能与验收步骤见
-[docs/project-completion-checklist.md](docs/project-completion-checklist.md)。
+[docs/project-completion-checklist.md](docs/project-completion-checklist.md)。自动化测试说明见
+[docs/api-automated-testing.md](docs/api-automated-testing.md) 和 [docs/browser-e2e.md](docs/browser-e2e.md)。
+最终交付材料见 [docs/deployment-acceptance.md](docs/deployment-acceptance.md)、
+[docs/demo-video-script.md](docs/demo-video-script.md) 和 [docs/defense-portfolio.md](docs/defense-portfolio.md)。

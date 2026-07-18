@@ -5,12 +5,15 @@ build/
 .cache/
 .output/
 coverage/
+playwright-report/
+test-results/
 
 .env
 .env.local
 .env.*.local
 
 *.log
+.logs/
 pnpm-debug.log*
 npm-debug.log*
 yarn-debug.log*
