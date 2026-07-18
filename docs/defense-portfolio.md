@@ -17,8 +17,10 @@
 - API 总行覆盖率 62.44%，`StatsService` 行覆盖率 100%。
 - 1 条 Playwright 跨端主链路：C 端预约 → 后台确认 → 生成订单 → 满减券支付 → C 端回显。
 - 全仓 typecheck、API build、后台 build、C 端 H5 build 通过。
-- 首次 GitHub Actions CI 成功，生成 API coverage artifact。
+- 最新 GitHub Actions CI 成功，完整 verify 作业耗时 2 分 57 秒，生成 105 KB API coverage artifact。
 - 测试数据库固定为 `127.0.0.1:5433/petcare_test`，清理前有双重安全校验。
+
+展示素材已经固定为 8 张截图和两段无旁白录屏，索引见 [showcase-assets.md](showcase-assets.md)。截图覆盖 C 端预约/支付、后台预约/订单、会员权益、经营报表、AI 降级和 CI 成功证据。
 
 ## 三分钟答辩结构
 

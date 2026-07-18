@@ -2,6 +2,15 @@
 
 建议时长：9 分钟。录制前执行 `pnpm typecheck` 和三端 build，准备好演示账号与固定浏览器标签页。
 
+## 已准备素材
+
+- `docs/assets/showcase/admin-walkthrough.webm`：后台无旁白原始录屏，1440×900，约 21 秒。
+- `docs/assets/showcase/miniapp-walkthrough.webm`：C 端无旁白原始录屏，430×932，约 11 秒。
+- `docs/assets/showcase/01` 至 `08`：预约、支付、后台、会员、报表、AI 和 CI 共 8 张固定截图。
+- 完整索引和复录命令见 [showcase-assets.md](showcase-assets.md)。
+
+两段原始录屏用于视频剪辑中的快速过场，不替代下方 9 分钟旁白录制。正式成片建议使用本人的声音按时间轴讲解，这样答辩时表达与视频保持一致。
+
 ## 0:00–0:35 开场与定位
 
 画面：README 标题、项目结构或首页。

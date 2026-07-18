@@ -15,6 +15,7 @@
     "test:api:coverage": "node scripts/run-api-tests.mjs --coverage",
     "test:e2e": "node scripts/run-browser-e2e.mjs",
     "test:e2e:headed": "node scripts/run-browser-e2e.mjs --headed",
+    "demo:capture-videos": "node scripts/capture-demo-videos.mjs",
     "docker:build": "docker compose --profile app build",
     "docker:up": "docker compose --profile app up -d",
     "docker:down": "docker compose --profile app down",

@@ -82,6 +82,16 @@ AI_MODEL="gpt-4.1-mini"
 - 客户召回：筛选 30/60/90 天未消费客户，生成召回文案并创建跟进任务。
 - 系统设置：展示门店名称、营业时间、地址、联系电话和固定预约时间段。
 
+## 当前版本边界
+
+- 当前定位为单门店 MVP 和答辩/作品集演示项目，不是可直接商用的多租户 SaaS。
+- 登录使用模拟账号；尚未接入微信登录、手机号验证码、员工账号和 RBAC。
+- 支付使用模拟支付、到店支付、会员余额和套餐卡核销；没有虚构微信/支付宝回调、退款与对账。
+- 通知为站内通知；没有接入短信、微信订阅消息或移动推送。
+- C 端客服支持真实 OpenAI 兼容模型和规则降级；后台经营、召回、营销主要为规则型生成。
+- 知识库采用关键词检索，尚未接入 embedding、pgvector 和向量 RAG。
+- 个人职责覆盖需求拆解、业务建模、三端实现、事务与时区处理、测试、CI、部署配置和交付材料。
+
 ## 演示路线
 
 1. 打开商家后台 `http://localhost:5173`，使用 `19900000000` 登录。
@@ -97,6 +107,24 @@ AI_MODEL="gpt-4.1-mini"
 11. 在后台「营销文案」生成活动文案草案。
 12. 在后台「客户召回」筛选长期未消费客户并创建跟进任务。
 13. 在「知识库」维护客服问答内容，在「系统设置」查看门店基础信息。
+
+## 项目展示
+
+| C 端预约与支付结果                                                  | 商家经营报表                                              |
+| ------------------------------------------------------------------- | --------------------------------------------------------- |
+| ![C 端预约与支付结果](docs/assets/showcase/02-mini-paid-result.png) | ![商家经营报表](docs/assets/showcase/06-admin-report.png) |
+
+- [完整 8 张作品集截图](docs/showcase-assets.md)
+- [后台无旁白录屏素材](docs/assets/showcase/admin-walkthrough.webm)
+- [C 端无旁白录屏素材](docs/assets/showcase/miniapp-walkthrough.webm)
+
+三端启动后可重新生成两段录屏素材：
+
+```powershell
+pnpm exec playwright install ffmpeg
+$env:PLAYWRIGHT_CHANNEL="msedge"
+pnpm demo:capture-videos
+```
 
 ## 常用验证命令
 
@@ -120,4 +148,5 @@ pnpm --filter @petcare/miniapp build:h5
 [docs/project-completion-checklist.md](docs/project-completion-checklist.md)。自动化测试说明见
 [docs/api-automated-testing.md](docs/api-automated-testing.md) 和 [docs/browser-e2e.md](docs/browser-e2e.md)。
 最终交付材料见 [docs/deployment-acceptance.md](docs/deployment-acceptance.md)、
-[docs/demo-video-script.md](docs/demo-video-script.md) 和 [docs/defense-portfolio.md](docs/defense-portfolio.md)。
+[docs/demo-video-script.md](docs/demo-video-script.md)、[docs/showcase-assets.md](docs/showcase-assets.md)
+和 [docs/defense-portfolio.md](docs/defense-portfolio.md)。
